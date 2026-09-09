@@ -1,0 +1,47 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      PICS_DB: /data/catalog.db
+      PICS_LIBRARY: /library
+      PICS_WORKER_URL: http://worker:9090
+    volumes:
+      - catalog:/data
+      - library:/library
+    depends_on:
+      - worker
+
+  worker:
+    build:
+      context: .
+      dockerfile: services/worker/Dockerfile
+    environment:
+      PICS_DB: /data/catalog.db
+      PICS_LIBRARY: /library
+      PICS_MODEL: openai/clip-vit-base-patch32
+      HF_HOME: /models/huggingface
+    volumes:
+      - catalog:/data
+      - library:/library
+      - models:/models
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_PICS_API_URL: http://localhost:8000
+    depends_on:
+      - api
+
+volumes:
+  catalog:
+  library:
+  models:

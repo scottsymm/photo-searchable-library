@@ -17,15 +17,23 @@ class TextRequest(BaseModel):
 
 
 @app.on_event("startup")
+def load_model() -> None:
     global embedder
-    embedder = ClipEmbedder(MODEL_NAME)
+    if embedder is None:
+        embedder = ClipEmbedder(MODEL_NAME)
 
 
 @app.get("/v1/status")
+def status() -> dict:
     return {"ok": embedder is not None, "model": MODEL_NAME, "version": MODEL_VERSION}
 
 
 @app.post("/v1/embed-text")
+def embed_text(request: TextRequest) -> dict:
     if embedder is None:
         raise HTTPException(status_code=503, detail="models_pending")
-    return {"model": MODEL_NAME, "version": MODEL_VERSION, "results": embedder.embed_text(request.texts)}
+    return {
+        "model": MODEL_NAME,
+        "version": MODEL_VERSION,
+        "results": embedder.embed_text(request.texts),
+    }
