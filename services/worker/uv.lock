@@ -925,7 +925,7 @@ wheels = [
 [[package]]
 name = "pics-core"
 version = "0.1.0"
-source = { directory = "../../packages/core" }
+source = { editable = "../../packages/core" }
 dependencies = [
     { name = "reverse-geocoder" },
     { name = "sqlite-vec" },
@@ -968,7 +968,7 @@ requires-dist = [
     { name = "insightface", specifier = ">=0.7.3" },
     { name = "numpy", specifier = ">=2" },
     { name = "onnxruntime", specifier = ">=1.17" },
-    { name = "pics-core", directory = "../../packages/core" },
+    { name = "pics-core", editable = "../../packages/core" },
     { name = "pillow", specifier = ">=10" },
     { name = "pillow-heif", specifier = ">=1.1" },
     { name = "pyexiftool", specifier = ">=0.5.6" },

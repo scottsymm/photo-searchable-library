@@ -24,6 +24,7 @@ services:
       PICS_LIBRARY: /library
       PICS_MODEL: openai/clip-vit-base-patch32
       HF_HOME: /models/huggingface
+      INSIGHTFACE_ROOT: /models/insightface
     volumes:
       - catalog:/data
       - library:/library

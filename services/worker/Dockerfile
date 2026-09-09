@@ -15,6 +15,7 @@ RUN pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu 
 ENV PICS_DB=/data/catalog.db
 ENV PICS_LIBRARY=/library
 ENV HF_HOME=/models/huggingface
+ENV INSIGHTFACE_ROOT=/models/insightface
 ENV PYTHONPATH=/app/services/worker
 EXPOSE 9090
 CMD ["python", "-m", "worker.service"]

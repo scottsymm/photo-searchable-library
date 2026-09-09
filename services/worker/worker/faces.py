@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
+import os
 
 
 class FaceEngine:
@@ -12,6 +13,7 @@ class FaceEngine:
         self.app = insightface.app.FaceAnalysis(
             name=model_name,
             providers=["CPUExecutionProvider"],
+            root=os.environ.get("INSIGHTFACE_ROOT", "/models/insightface"),
         )
         self.app.prepare(ctx_id=0, det_size=(640, 640))
 
