@@ -1,0 +1,27 @@
+[project]
+name = "pics-worker"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+  "pics-core",
+  "fastapi>=0.115",
+  "uvicorn>=0.30",
+  "torch>=2.0",
+  "transformers>=5",
+  "pillow>=10",
+  "pillow-heif>=1.1",
+  "PyExifTool>=0.5.6",
+  "insightface>=0.7.3",
+  "onnxruntime>=1.17",
+  "numpy>=2",
+]
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.uv.sources]
+pics-core = { path = "../../packages/core" }
