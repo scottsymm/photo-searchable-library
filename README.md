@@ -139,20 +139,52 @@ Run the web app locally:
 
 ```bash
 pnpm install
-pnpm dev:all
+pnpm dev
 ```
 
 Run the workspace checks, tests, and builds through Turborepo:
 
 ```bash
-pnpm check:all
-pnpm test:all
-pnpm build:all
+pnpm check
+pnpm test
+pnpm build
 ```
 
-Python workspace discovery and task integration use Turborepo's experimental
-`uv` workspace support. Direct `uv` commands remain available for package-level
-work and troubleshooting.
+## Repository Tooling
+
+Turborepo orchestrates the TypeScript and Python workspace tasks. Python
+workspace discovery uses Turborepo's experimental `uv` workspace support.
+The Python package graph is:
+
+```text
+pics-core
+  ├── pics-api
+  ├── pics-worker
+  └── pics-cli
+```
+
+The root commands use package filters so `test` and `build` target the actual
+workspace packages rather than the synthetic root `uv` workspace package:
+
+```bash
+pnpm dev
+pnpm check
+pnpm test
+pnpm build
+```
+
+Run a task for one package with Turbo or use the underlying tool directly:
+
+```bash
+pnpm turbo run test --filter=web
+uv run --package pics-api --extra dev pytest apps/api/tests
+pnpm --dir apps/web test
+```
+
+Turborepo handles local task orchestration and caching. Docker Compose remains
+responsible for building and running the API, worker, and web services together.
+Virtual environments, `.turbo/`, model files, and runtime data are not source
+or build artifacts and are excluded from version control.
 
 Runtime data belongs outside version control: `catalog.db`, `library/`, and
 `models/` are ignored by Git. Local CLI commands use `PICS_DB` and `PICS_API`:

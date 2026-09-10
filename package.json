@@ -3,10 +3,10 @@
   "private": true,
   "packageManager": "pnpm@10.0.0",
   "scripts": {
-    "dev:all": "turbo run dev --filter=web --parallel",
-    "test:all": "turbo run test --filter=web --filter=pics-api --filter=pics-cli --filter=pics-core --filter=pics-worker",
-    "build:all": "turbo run build --filter=web --filter=pics-api --filter=pics-cli --filter=pics-core --filter=pics-worker",
-    "check:all": "turbo run check --filter=pics --filter=web"
+    "dev": "turbo run dev --filter=web --parallel",
+    "test": "turbo run test --filter=web --filter=pics-api --filter=pics-cli --filter=pics-core --filter=pics-worker",
+    "build": "turbo run build --filter=web --filter=pics-api --filter=pics-cli --filter=pics-core --filter=pics-worker",
+    "check": "turbo run check --filter=pics --filter=web"
   },
   "devDependencies": {
     "turbo": "^2.5.6"
