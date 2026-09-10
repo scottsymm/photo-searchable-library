@@ -35,6 +35,24 @@ def query(text: str, args) -> None:
         print(f"{result['id']}\t{result.get('distance', '')}\t{result['path']}")
 
 
+def upload(path: str) -> None:
+    root = Path(path).expanduser()
+    paths = [root] if root.is_file() else [
+        item for item in root.rglob("*")
+        if item.is_file() and item.suffix.lower() in MEDIA_SUFFIXES
+    ]
+    base = os.environ.get("PICS_API", "http://localhost:8000")
+    with httpx.Client(timeout=120) as client:
+        for index, item in enumerate(paths, 1):
+            with item.open("rb") as source:
+                response = client.post(
+                    f"{base}/assets/upload",
+                    files={"file": (item.name, source, "application/octet-stream")},
+                )
+            response.raise_for_status()
+            print(f"[{index}/{len(paths)}] {item} -> job {response.json()['job_id']}")
+
+
 def strip_exif(path: str) -> None:
     source = Path(path).expanduser()
     output = source.with_name(f"{source.stem}.clean{source.suffix}")
@@ -83,6 +101,9 @@ def main() -> int:
     query_parser.add_argument("--who")
     query_parser.add_argument("--place")
     query_parser.add_argument("--limit", type=int, default=20)
+    upload_parser = subparsers.add_parser("upload", help="Upload files to the running API")
+    upload_parser.add_argument("path")
+    upload_parser.set_defaults(func=lambda args: upload(args.path))
     strip_parser = subparsers.add_parser("strip-exif")
     strip_parser.add_argument("path")
     cluster_parser = subparsers.add_parser("cluster")
@@ -97,6 +118,8 @@ def main() -> int:
         scan(args.path)
     elif args.command == "query":
         query(args.text, args)
+    elif args.command == "upload":
+        args.func(args)
     else:
         if args.command == "strip-exif":
             strip_exif(args.path)
