@@ -109,6 +109,12 @@ CREATE TABLE IF NOT EXISTS person_faces (
   PRIMARY KEY(person_id, face_id)
 );
 
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS tags (
   asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
   tag TEXT NOT NULL,
@@ -143,6 +149,8 @@ CREATE VIRTUAL TABLE IF NOT EXISTS vec0_face USING vec0(
 def migrate(conn: sqlite3.Connection) -> None:
     conn.executescript(SCHEMA)
     conn.execute(
-        "INSERT OR REPLACE INTO schema_meta(key, value) VALUES ('version', '2')"
+        "INSERT OR REPLACE INTO schema_meta(key, value) VALUES ('version', '3')"
     )
+    from .settings import seed
+    seed(conn)
     conn.commit()

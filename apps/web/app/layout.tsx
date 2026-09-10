@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ParkedBanner } from "../components/ParkedBanner";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -18,6 +19,7 @@ export default function Layout({ children }: Readonly<{ children: React.ReactNod
           <Link href="/settings">Settings</Link>
         </nav>
       </header>
+      <ParkedBanner />
       {children}
     </div>
   );

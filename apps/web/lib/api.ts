@@ -1,4 +1,4 @@
-import type { Asset, ClusterSuggestion, Job, Person, Place } from "../types";
+import type { AdminSettings, AdminStatus, Asset, ClusterSuggestion, Job, Person, Place } from "../types";
 
 const API = process.env.NEXT_PUBLIC_PICS_API_URL ?? "http://localhost:8000";
 
@@ -60,4 +60,29 @@ export async function confirmSuggestion(id: number, name: string): Promise<void>
 export async function rejectSuggestion(id: number): Promise<void> {
   const response = await fetch(apiUrl(`/persons/suggestions/${id}/reject`), { method: "POST" });
   if (!response.ok) throw new Error("Could not reject cluster");
+}
+
+export async function adminStatus(): Promise<AdminStatus> {
+  const response = await fetch(apiUrl("/admin/status"), { cache: "no-store" });
+  if (!response.ok) throw new Error("Status request failed");
+  return response.json();
+}
+
+export async function updateAdminSettings(update: Partial<AdminSettings>): Promise<AdminSettings> {
+  const response = await fetch(apiUrl("/admin/settings"), {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(update),
+  });
+  if (!response.ok) throw new Error("Settings update failed");
+  return (await response.json()).settings;
+}
+
+export async function queueAdminScan(root?: string): Promise<void> {
+  const response = await fetch(apiUrl("/admin/scan"), {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(root ? { root } : {}),
+  });
+  if (!response.ok) throw new Error("Scan request failed");
 }

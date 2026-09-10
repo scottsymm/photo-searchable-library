@@ -9,9 +9,11 @@ services:
       PICS_DB: /data/catalog.db
       PICS_LIBRARY: /library
       PICS_WORKER_URL: http://worker:9090
+      PICS_WATCH_ROOT: /media/photos
     volumes:
       - catalog:/data
       - library:/library
+      - ${PICS_MOUNT_SOURCE:-$HOME/Pictures}:/media/photos:ro
     depends_on:
       worker:
         condition: service_healthy
@@ -31,10 +33,14 @@ services:
       PICS_MODEL: openai/clip-vit-base-patch32
       HF_HOME: /models/huggingface
       INSIGHTFACE_ROOT: /models/insightface
+      PICS_WATCH_ROOT: /media/photos
+      PICS_WATCHER_ENABLED: "1"
+      PICS_WATCH_POLL_SECONDS: "30"
     volumes:
       - catalog:/data
       - library:/library
       - models:/models
+      - ${PICS_MOUNT_SOURCE:-$HOME/Pictures}:/media/photos:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:9090/v1/status', timeout=3)"]
