@@ -38,7 +38,9 @@ def _filter_ids(
         params.append(tag)
     if who:
         query += """ AND id IN (
-          SELECT faces.asset_id FROM faces JOIN persons ON persons.id = faces.cluster_id
+          SELECT faces.asset_id FROM faces
+          JOIN person_faces ON person_faces.face_id = faces.id
+          JOIN persons ON persons.id = person_faces.person_id
           WHERE persons.name = ?
         )"""
         params.append(who)

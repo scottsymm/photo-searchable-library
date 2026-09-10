@@ -16,6 +16,23 @@ export interface Person {
   face_count: number;
 }
 
+export interface FaceSuggestion {
+  face_id: number;
+  distance: number | null;
+  crop_url: string;
+}
+
+export interface ClusterSuggestion {
+  id: number;
+  run_id: number;
+  face_count: number;
+  confidence: "high" | "candidate";
+  status: "unreviewed" | "confirmed" | "rejected";
+  person_id: number | null;
+  representative_url: string;
+  faces: FaceSuggestion[];
+}
+
 export interface Place {
   place_city: string;
   place_country: string;

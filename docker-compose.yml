@@ -13,7 +13,13 @@ services:
       - catalog:/data
       - library:/library
     depends_on:
-      - worker
+      worker:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
 
   worker:
     build:
@@ -30,6 +36,11 @@ services:
       - library:/library
       - models:/models
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:9090/v1/status', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 30
 
   web:
     build:
@@ -40,7 +51,8 @@ services:
     environment:
       NEXT_PUBLIC_PICS_API_URL: http://localhost:8000
     depends_on:
-      - api
+      api:
+        condition: service_healthy
 
 volumes:
   catalog:

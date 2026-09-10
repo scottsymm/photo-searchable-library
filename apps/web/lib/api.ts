@@ -1,4 +1,4 @@
-import type { Asset, Job, Person, Place } from "../types";
+import type { Asset, ClusterSuggestion, Job, Person, Place } from "../types";
 
 const API = process.env.NEXT_PUBLIC_PICS_API_URL ?? "http://localhost:8000";
 
@@ -16,10 +16,10 @@ export async function search(params: Record<string, string | undefined>): Promis
   return (await response.json()).results;
 }
 
-export async function people(): Promise<Person[]> {
+export async function people(): Promise<{ persons: Person[]; suggestions: ClusterSuggestion[] }> {
   const response = await fetch(apiUrl("/persons"), { cache: "no-store" });
   if (!response.ok) throw new Error("People request failed");
-  return (await response.json()).persons;
+  return response.json();
 }
 
 export async function places(): Promise<Place[]> {
@@ -41,4 +41,23 @@ export async function renamePerson(id: number, name: string): Promise<void> {
     body: JSON.stringify({ name }),
   });
   if (!response.ok) throw new Error("Rename failed");
+}
+
+export async function queueClustering(): Promise<void> {
+  const response = await fetch(apiUrl("/persons/cluster"), { method: "POST" });
+  if (!response.ok) throw new Error("Clustering request failed");
+}
+
+export async function confirmSuggestion(id: number, name: string): Promise<void> {
+  const response = await fetch(apiUrl(`/persons/suggestions/${id}/confirm`), {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
+  if (!response.ok) throw new Error("Could not confirm cluster");
+}
+
+export async function rejectSuggestion(id: number): Promise<void> {
+  const response = await fetch(apiUrl(`/persons/suggestions/${id}/reject`), { method: "POST" });
+  if (!response.ok) throw new Error("Could not reject cluster");
 }
