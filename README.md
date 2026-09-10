@@ -73,6 +73,24 @@ The command uploads supported `.jpg`, `.jpeg`, `.png`, `.heic`, `.heif`, `.mov`,
 `.mp4`, `.avif`, and `.dng` files through the API. It does not modify the
 original files.
 
+The Admin page at <http://localhost:3000/settings> starts parked. It shows the
+current mounted Pictures path and controls whether watching is enabled. The
+default mount is `$HOME/Pictures`; watching is off until you enable it in the
+Admin page. You can choose whether an enable action backfills existing files or
+only watches new files.
+
+To use a different host directory, set `PICS_MOUNT_SOURCE` before starting
+Compose:
+
+```bash
+docker compose down
+PICS_MOUNT_SOURCE=/Volumes/Backup/Photos docker compose up --build
+```
+
+The mount point cannot be changed from the UI because Docker establishes it at
+container startup. The UI controls the runtime watch state and all processing
+jobs. Manual upload remains available while watch is paused.
+
 Monitor jobs:
 
 ```bash

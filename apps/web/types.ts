@@ -46,3 +46,19 @@ export interface Job {
   progress: number;
   error: string | null;
 }
+
+export interface AdminSettings {
+  watch_enabled: "0" | "1";
+  watch_backfill: "prompt" | "backfill" | "done";
+  watch_initialized?: "0" | "1";
+  [key: string]: string | undefined;
+}
+
+export interface AdminStatus {
+  watch_root: string;
+  root_available: boolean;
+  models_ready: boolean;
+  disk: { total: number; used: number; free: number } | null;
+  counts: { assets: number; faces: number; persons: number; jobs: number };
+  settings: AdminSettings;
+}

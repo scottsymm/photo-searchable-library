@@ -46,4 +46,6 @@ h2 { font: 400 2rem Georgia, serif; letter-spacing: -.04em; }
 .faceRow img { width: 86px; height: 86px; border-radius: 10px; object-fit: cover; background: var(--paper); }
 .secondary { color: var(--ink); background: var(--line); }
 .muted { color: var(--muted); }
+.parkedBanner { position: sticky; top: 0; z-index: 50; padding: 14px 24px; color: white; background: var(--accent); font-weight: 700; text-align: center; }
+.parkedBanner a { color: white; text-decoration: underline; }
 @media (max-width: 650px) { .shell { padding: 20px 18px 40px; } .topbar { align-items: flex-start; flex-direction: column; margin-bottom: 38px; } .searchForm { align-items: stretch; flex-direction: column; } .button { width: 100%; } }

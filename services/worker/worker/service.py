@@ -8,10 +8,11 @@ import time
 import uvicorn
 
 from . import embed_api
-from .config import EMBED_PORT, FACE_MODEL, MODEL_NAME
+from .config import EMBED_PORT, FACE_MODEL, MODEL_NAME, WATCHER_ENABLED
 from .faces import FaceEngine
 from .models import ClipEmbedder
 from .run import drain_once
+from .watcher import PhotoWatcher
 
 
 def main() -> None:
@@ -25,6 +26,8 @@ def main() -> None:
         daemon=True,
     )
     server_thread.start()
+    if WATCHER_ENABLED:
+        PhotoWatcher().start()
     while True:
         if not drain_once(clip, face_engine):
             time.sleep(2)
