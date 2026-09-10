@@ -65,6 +65,50 @@ CREATE TABLE IF NOT EXISTS face_embeds (
   embed BLOB NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS clustering_runs (
+  id INTEGER PRIMARY KEY,
+  model TEXT NOT NULL,
+  model_version TEXT NOT NULL,
+  algorithm TEXT NOT NULL,
+  metric TEXT NOT NULL,
+  eps REAL NOT NULL,
+  min_samples INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'running',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  completed_at TEXT,
+  error TEXT
+);
+
+CREATE TABLE IF NOT EXISTS cluster_suggestions (
+  id INTEGER PRIMARY KEY,
+  run_id INTEGER NOT NULL REFERENCES clustering_runs(id) ON DELETE CASCADE,
+  cluster_key INTEGER NOT NULL,
+  representative_face_id INTEGER REFERENCES faces(id),
+  face_count INTEGER NOT NULL,
+  confidence TEXT NOT NULL DEFAULT 'candidate',
+  status TEXT NOT NULL DEFAULT 'unreviewed',
+  person_id INTEGER REFERENCES persons(id),
+  UNIQUE(run_id, cluster_key)
+);
+
+CREATE TABLE IF NOT EXISTS face_assignments (
+  id INTEGER PRIMARY KEY,
+  run_id INTEGER NOT NULL REFERENCES clustering_runs(id) ON DELETE CASCADE,
+  face_id INTEGER NOT NULL REFERENCES faces(id) ON DELETE CASCADE,
+  suggestion_id INTEGER REFERENCES cluster_suggestions(id) ON DELETE CASCADE,
+  distance REAL,
+  status TEXT NOT NULL DEFAULT 'suggested',
+  UNIQUE(run_id, face_id)
+);
+
+CREATE TABLE IF NOT EXISTS person_faces (
+  person_id INTEGER NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+  face_id INTEGER NOT NULL REFERENCES faces(id) ON DELETE CASCADE,
+  source TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY(person_id, face_id)
+);
+
 CREATE TABLE IF NOT EXISTS tags (
   asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
   tag TEXT NOT NULL,
@@ -85,6 +129,8 @@ CREATE TABLE IF NOT EXISTS jobs (
 
 CREATE INDEX IF NOT EXISTS assets_taken_at_idx ON assets(taken_at);
 CREATE INDEX IF NOT EXISTS assets_place_idx ON assets(place_city, place_country);
+CREATE INDEX IF NOT EXISTS face_assignments_face_idx ON face_assignments(face_id);
+CREATE INDEX IF NOT EXISTS person_faces_face_idx ON person_faces(face_id);
 CREATE VIRTUAL TABLE IF NOT EXISTS vec0_content USING vec0(
   content_embed float[512]
 );
@@ -97,6 +143,6 @@ CREATE VIRTUAL TABLE IF NOT EXISTS vec0_face USING vec0(
 def migrate(conn: sqlite3.Connection) -> None:
     conn.executescript(SCHEMA)
     conn.execute(
-        "INSERT OR REPLACE INTO schema_meta(key, value) VALUES ('version', '1')"
+        "INSERT OR REPLACE INTO schema_meta(key, value) VALUES ('version', '2')"
     )
     conn.commit()

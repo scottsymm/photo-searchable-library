@@ -42,6 +42,37 @@ def strip_exif(path: str) -> None:
     print(output)
 
 
+def cluster(args) -> None:
+    with connect(os.environ.get("PICS_DB", "catalog.db")) as conn:
+        job_id = jobs.push(
+            conn,
+            "cluster_faces",
+            {"eps": args.eps, "min_samples": args.min_samples},
+        )
+    print(f"queued face clustering job {job_id}")
+
+
+def people(args) -> None:
+    if args.json:
+        response = httpx.get(
+            os.environ.get("PICS_API", "http://localhost:8000") + "/persons",
+            timeout=30,
+        )
+        response.raise_for_status()
+        print(response.text)
+        return
+    response = httpx.get(
+        os.environ.get("PICS_API", "http://localhost:8000") + "/persons",
+        timeout=30,
+    )
+    response.raise_for_status()
+    data = response.json()
+    for person in data["persons"]:
+        print(f"person {person['id']}\t{person['name'] or '(unnamed)'}\t{person['face_count']} faces")
+    for suggestion in data.get("suggestions", []):
+        print(f"suggestion {suggestion['id']}\t{suggestion['confidence']}\t{suggestion['face_count']} faces\t{suggestion['status']}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(prog="pics")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -54,13 +85,23 @@ def main() -> int:
     query_parser.add_argument("--limit", type=int, default=20)
     strip_parser = subparsers.add_parser("strip-exif")
     strip_parser.add_argument("path")
+    cluster_parser = subparsers.add_parser("cluster")
+    cluster_parser.add_argument("--eps", type=float, default=0.30)
+    cluster_parser.add_argument("--min-samples", type=int, default=3)
+    cluster_parser.set_defaults(func=cluster)
+    people_parser = subparsers.add_parser("people")
+    people_parser.add_argument("--json", action="store_true")
+    people_parser.set_defaults(func=people)
     args = parser.parse_args()
     if args.command == "scan":
         scan(args.path)
     elif args.command == "query":
         query(args.text, args)
     else:
-        strip_exif(args.path)
+        if args.command == "strip-exif":
+            strip_exif(args.path)
+        else:
+            args.func(args)
     return 0
 
 

@@ -13,6 +13,7 @@ from .config import DB_PATH, FACE_MODEL, MODEL_NAME
 from .faces import FaceEngine
 from .models import ClipEmbedder
 from .pipeline import import_one
+from core.clustering import run_clustering
 
 
 def drain_once(clip, face_engine) -> bool:
@@ -29,6 +30,15 @@ def drain_once(clip, face_engine) -> bool:
             for index, path in enumerate(paths):
                 import_one(clip, face_engine, path)
                 jobs.set_progress(conn, job["id"], (index + 1) / max(1, len(paths)))
+        elif job["kind"] == "cluster_faces":
+            params = json.loads(job["params"] or "{}")
+            run_clustering(
+                conn,
+                model=params.get("model", "buffalo_l"),
+                model_version=params.get("model_version", "buffalo_l-v1"),
+                eps=float(params.get("eps", 0.30)),
+                min_samples=int(params.get("min_samples", 3)),
+            )
         jobs.complete(conn, job["id"])
     except Exception as error:
         jobs.fail(conn, job["id"], str(error))

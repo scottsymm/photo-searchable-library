@@ -5,6 +5,7 @@ requires-python = ">=3.12"
 dependencies = [
   "reverse-geocoder>=1.5.1",
   "sqlite-vec>=0.1.9",
+  "scikit-learn>=1.5",
 ]
 
 [build-system]
