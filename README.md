@@ -65,8 +65,7 @@ curl -F 'file=@/path/to/photo.heic' http://localhost:8000/assets/upload
 For a directory, install the CLI dependencies locally and use `pics upload`:
 
 ```bash
-uv sync --project tools/cli
-uv run --project tools/cli pics upload "$HOME/Pictures"
+uv run --package pics-cli pics upload "$HOME/Pictures"
 ```
 
 The command uploads supported `.jpg`, `.jpeg`, `.png`, `.heic`, `.heif`, `.mov`,
@@ -116,7 +115,7 @@ filters.
 After photos have been indexed, queue conservative face clustering:
 
 ```bash
-uv run --project tools/cli pics cluster --eps 0.30 --min-samples 3
+uv run --package pics-cli pics cluster --eps 0.30 --min-samples 3
 ```
 
 The CLI command targets the local `catalog.db` by default. For the Docker
@@ -133,34 +132,44 @@ Python services require Python 3.12 and `uv`. The worker also requires the
 
 ```bash
 brew install exiftool ffmpeg
-uv sync --project packages/core
-uv sync --project services/worker --extra dev
-uv sync --project apps/api --extra dev
-uv sync --project tools/cli
+uv sync --all-packages
 ```
 
 Run the web app locally:
 
 ```bash
 pnpm install
-pnpm web
+pnpm dev:all
 ```
+
+Run the workspace checks, tests, and builds through Turborepo:
+
+```bash
+pnpm check:all
+pnpm test:all
+pnpm build:all
+```
+
+Python workspace discovery and task integration use Turborepo's experimental
+`uv` workspace support. Direct `uv` commands remain available for package-level
+work and troubleshooting.
 
 Runtime data belongs outside version control: `catalog.db`, `library/`, and
 `models/` are ignored by Git. Local CLI commands use `PICS_DB` and `PICS_API`:
 
 ```bash
 PICS_DB=/path/to/catalog.db PICS_API=http://localhost:8000 \
-  uv run --project tools/cli pics query "birthday cake"
+  uv run --package pics-cli pics query "birthday cake"
 ```
 
 ## Verification
 
 ```bash
-uv run --project packages/core pytest packages/core/tests
-uv run --project services/worker pytest services/worker/tests
-uv run --project apps/api pytest apps/api/tests
-pnpm --dir apps/web test
-pnpm --dir apps/web build
+uv lock --check
+uv run --frozen --package pics-core --extra dev pytest packages/core/tests
+uv run --frozen --package pics-worker --extra dev pytest services/worker/tests
+uv run --frozen --package pics-api --extra dev pytest apps/api/tests
+pnpm turbo run test --filter=web
+pnpm turbo run build --filter=web
 docker compose config
 ```

@@ -1,0 +1,80 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "futureFlags": {
+    "experimentalPythonWorkspaces": true,
+    "experimentalTaskCommand": true
+  },
+  "tasks": {
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "test": {
+      "dependsOn": ["^test"]
+    },
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
+    "check": {
+      "dependsOn": ["^check"]
+    },
+    "pics#check": {
+      "command": ["uv", "lock", "--check"]
+    },
+    "pics-core#test": {
+      "dependsOn": ["^test"],
+      "command": [
+        "uv",
+        "run",
+        "--frozen",
+        "--package",
+        "pics-core",
+        "--extra",
+        "dev",
+        "pytest",
+        "tests"
+      ]
+    },
+    "pics-api#test": {
+      "dependsOn": ["^test"],
+      "command": [
+        "uv",
+        "run",
+        "--frozen",
+        "--package",
+        "pics-api",
+        "--extra",
+        "dev",
+        "pytest",
+        "tests"
+      ]
+    },
+    "pics-worker#test": {
+      "dependsOn": ["^test"],
+      "command": [
+        "uv",
+        "run",
+        "--frozen",
+        "--package",
+        "pics-worker",
+        "--extra",
+        "dev",
+        "pytest",
+        "tests"
+      ]
+    },
+    "pics-cli#test": {
+      "dependsOn": ["^test"],
+      "command": [
+        "uv",
+        "run",
+        "--frozen",
+        "--package",
+        "pics-cli",
+        "pics",
+        "--help"
+      ]
+    }
+  }
+}

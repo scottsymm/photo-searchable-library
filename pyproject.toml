@@ -1,0 +1,10 @@
+[tool.turbo]
+name = "pics"
+
+[tool.uv.workspace]
+members = [
+  "packages/core",
+  "apps/api",
+  "services/worker",
+  "tools/cli",
+]

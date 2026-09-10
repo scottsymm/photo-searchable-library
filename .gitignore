@@ -12,6 +12,8 @@ node_modules/
 .next/
 out/
 coverage/
+.turbo/
+*.tsbuildinfo
 
 # Runtime data
 catalog.db*
