@@ -65,8 +65,7 @@ curl -F 'file=@/path/to/photo.heic' http://localhost:8000/assets/upload
 For a directory, install the CLI dependencies locally and use `pics upload`:
 
 ```bash
-uv sync --project tools/cli
-uv run --project tools/cli pics upload "$HOME/Pictures"
+uv run --package pics-cli pics upload "$HOME/Pictures"
 ```
 
 The command uploads supported `.jpg`, `.jpeg`, `.png`, `.heic`, `.heif`, `.mov`,
@@ -116,7 +115,7 @@ filters.
 After photos have been indexed, queue conservative face clustering:
 
 ```bash
-uv run --project tools/cli pics cluster --eps 0.30 --min-samples 3
+uv run --package pics-cli pics cluster --eps 0.30 --min-samples 3
 ```
 
 The CLI command targets the local `catalog.db` by default. For the Docker
@@ -133,34 +132,76 @@ Python services require Python 3.12 and `uv`. The worker also requires the
 
 ```bash
 brew install exiftool ffmpeg
-uv sync --project packages/core
-uv sync --project services/worker --extra dev
-uv sync --project apps/api --extra dev
-uv sync --project tools/cli
+uv sync --all-packages
 ```
 
 Run the web app locally:
 
 ```bash
 pnpm install
-pnpm web
+pnpm dev
 ```
+
+Run the workspace checks, tests, and builds through Turborepo:
+
+```bash
+pnpm check
+pnpm test
+pnpm build
+```
+
+## Repository Tooling
+
+Turborepo orchestrates the TypeScript and Python workspace tasks. Python
+workspace discovery uses Turborepo's experimental `uv` workspace support.
+The Python package graph is:
+
+```text
+pics-core
+  ├── pics-api
+  ├── pics-worker
+  └── pics-cli
+```
+
+The root commands use package filters so `test` and `build` target the actual
+workspace packages rather than the synthetic root `uv` workspace package:
+
+```bash
+pnpm dev
+pnpm check
+pnpm test
+pnpm build
+```
+
+Run a task for one package with Turbo or use the underlying tool directly:
+
+```bash
+pnpm turbo run test --filter=web
+uv run --package pics-api --extra dev pytest apps/api/tests
+pnpm --dir apps/web test
+```
+
+Turborepo handles local task orchestration and caching. Docker Compose remains
+responsible for building and running the API, worker, and web services together.
+Virtual environments, `.turbo/`, model files, and runtime data are not source
+or build artifacts and are excluded from version control.
 
 Runtime data belongs outside version control: `catalog.db`, `library/`, and
 `models/` are ignored by Git. Local CLI commands use `PICS_DB` and `PICS_API`:
 
 ```bash
 PICS_DB=/path/to/catalog.db PICS_API=http://localhost:8000 \
-  uv run --project tools/cli pics query "birthday cake"
+  uv run --package pics-cli pics query "birthday cake"
 ```
 
 ## Verification
 
 ```bash
-uv run --project packages/core pytest packages/core/tests
-uv run --project services/worker pytest services/worker/tests
-uv run --project apps/api pytest apps/api/tests
-pnpm --dir apps/web test
-pnpm --dir apps/web build
+uv lock --check
+uv run --frozen --package pics-core --extra dev pytest packages/core/tests
+uv run --frozen --package pics-worker --extra dev pytest services/worker/tests
+uv run --frozen --package pics-api --extra dev pytest apps/api/tests
+pnpm turbo run test --filter=web
+pnpm turbo run build --filter=web
 docker compose config
 ```

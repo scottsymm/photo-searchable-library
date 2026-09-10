@@ -25,4 +25,4 @@ build-backend = "setuptools.build_meta"
 dev = ["pytest>=8"]
 
 [tool.uv.sources]
-pics-core = { path = "../../packages/core", editable = true }
+pics-core = { workspace = true }

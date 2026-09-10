@@ -3,8 +3,12 @@
   "private": true,
   "packageManager": "pnpm@10.0.0",
   "scripts": {
-    "web": "pnpm --dir apps/web dev",
-    "test:web": "pnpm --dir apps/web test",
-    "build:web": "pnpm --dir apps/web build"
+    "dev": "turbo run dev --filter=web --parallel",
+    "test": "turbo run test --filter=web --filter=pics-api --filter=pics-cli --filter=pics-core --filter=pics-worker",
+    "build": "turbo run build --filter=web --filter=pics-api --filter=pics-cli --filter=pics-core --filter=pics-worker",
+    "check": "turbo run check --filter=pics --filter=web"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.6"
   }
 }
