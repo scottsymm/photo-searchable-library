@@ -142,6 +142,19 @@ pnpm install
 pnpm dev
 ```
 
+For Docker-based development with automatic source syncing and reloads, use the
+development Compose override:
+
+```bash
+pnpm dev:docker
+```
+
+The web app runs with `next dev`, and the API runs with Uvicorn reload enabled.
+Changes under `apps/web`, `apps/api`, and `packages/core` are synced into their
+containers. Changes to dependency files or development Dockerfiles trigger a
+container rebuild. The worker continues to use the regular image because its
+model environment is expensive to rebuild.
+
 Run the workspace checks, tests, and builds through Turborepo:
 
 ```bash
