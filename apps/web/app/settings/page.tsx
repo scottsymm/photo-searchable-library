@@ -8,13 +8,18 @@ export default function SettingsPage() {
   const [status, setStatus] = useState<AdminStatus | null>(null);
   const [items, setItems] = useState<Job[]>([]);
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(true);
 
   async function reload() {
     setStatus(await adminStatus());
     setItems(await jobs());
   }
 
-  useEffect(() => { reload().catch(() => setMessage("Admin API unavailable")); }, []);
+  useEffect(() => {
+    reload()
+      .catch(() => setMessage("Admin API unavailable. Check that the API service is ready, then refresh."))
+      .finally(() => setLoading(false));
+  }, []);
 
   async function toggleWatch() {
     if (!status) return;
@@ -27,7 +32,7 @@ export default function SettingsPage() {
     await reload();
   }
 
-  if (!status) return <main><div className="eyebrow">Operations</div><h1>Admin</h1><p className="muted">Loading admin state…</p></main>;
+  if (!status) return <main><div className="eyebrow">Operations</div><h1>Admin</h1><p className="muted">{loading ? "Loading admin state…" : message}</p></main>;
   const watching = status.settings.watch_enabled === "1";
   return <main>
     <div className="eyebrow">Operations</div><h1>Admin</h1>

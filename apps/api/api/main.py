@@ -1,6 +1,7 @@
 """FastAPI application entry point."""
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from core.schema import migrate
 
@@ -9,6 +10,12 @@ from .deps import DB_PATH
 from core.conn import connect
 
 app = FastAPI(title="Pics API", version="0.1.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 with connect(DB_PATH) as _connection:
     migrate(_connection)
