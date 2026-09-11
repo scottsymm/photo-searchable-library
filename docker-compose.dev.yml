@@ -39,6 +39,8 @@ services:
         - action: rebuild
           path: ./apps/web/package.json
         - action: rebuild
+          path: ./package.json
+        - action: rebuild
           path: ./pnpm-lock.yaml
         - action: rebuild
           path: ./apps/web/Dockerfile.dev
