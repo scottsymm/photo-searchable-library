@@ -10,17 +10,21 @@ export const metadata: Metadata = {
 
 export default function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <div className="shell">
-      <header className="topbar">
-        <Link className="brand" href="/">pics.</Link>
-        <nav className="nav">
-          <Link href="/people">People</Link>
-          <Link href="/places">Places</Link>
-          <Link href="/settings">Settings</Link>
-        </nav>
-      </header>
-      <ParkedBanner />
-      {children}
-    </div>
+    <html lang="en">
+      <body>
+        <div className="shell">
+          <header className="topbar">
+            <Link className="brand" href="/">pics.</Link>
+            <nav className="nav">
+              <Link href="/people">People</Link>
+              <Link href="/places">Places</Link>
+              <Link href="/settings">Settings</Link>
+            </nav>
+          </header>
+          <ParkedBanner />
+          {children}
+        </div>
+      </body>
+    </html>
   );
 }

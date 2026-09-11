@@ -4,6 +4,7 @@
   "packageManager": "pnpm@10.0.0",
   "scripts": {
     "dev": "turbo run dev --filter=web --parallel",
+    "dev:docker": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up --watch",
     "test": "turbo run test --filter=web --filter=pics-api --filter=pics-cli --filter=pics-core --filter=pics-worker",
     "build": "turbo run build --filter=web --filter=pics-api --filter=pics-cli --filter=pics-core --filter=pics-worker",
     "check": "turbo run check --filter=pics --filter=web"

@@ -1,0 +1,46 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile.dev
+    develop:
+      watch:
+        - action: sync
+          path: ./apps/api
+          target: /app/apps/api
+          ignore:
+            - __pycache__/
+            - .pytest_cache/
+        - action: sync
+          path: ./packages/core
+          target: /app/packages/core
+          ignore:
+            - __pycache__/
+            - .pytest_cache/
+        - action: rebuild
+          path: ./apps/api/pyproject.toml
+        - action: rebuild
+          path: ./packages/core/pyproject.toml
+        - action: rebuild
+          path: ./apps/api/Dockerfile.dev
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile.dev
+    develop:
+      watch:
+        - action: sync
+          path: ./apps/web
+          target: /app/apps/web
+          ignore:
+            - .next/
+            - node_modules/
+        - action: rebuild
+          path: ./apps/web/package.json
+        - action: rebuild
+          path: ./package.json
+        - action: rebuild
+          path: ./pnpm-lock.yaml
+        - action: rebuild
+          path: ./apps/web/Dockerfile.dev
