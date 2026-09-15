@@ -121,4 +121,5 @@ button.funnelStage:hover { border-color: var(--accent); }
 .copyButton:hover { border-color: var(--accent); color: var(--accent-dark); }
 .copyButton svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
 .cardLink { color: var(--accent-dark); font-size: .82rem; font-weight: 700; text-decoration: underline; }
+.enrichmentCard { display: grid; gap: 6px; max-width: 720px; margin: 20px 0 14px; }
 @media (max-width: 650px) { .commandRow { align-items: stretch; flex-direction: column; } .copyButton { justify-content: center; } }

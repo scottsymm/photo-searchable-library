@@ -33,6 +33,13 @@ export interface ClusterSuggestion {
   faces: FaceSuggestion[];
 }
 
+export interface FaceEnrichment {
+  total: number;
+  embeddings_ready: number;
+  embeddings_pending: number;
+  clustering_status: "no_faces" | "indexing" | "ready" | "queued" | "running" | "completed_no_suggestions";
+}
+
 export interface Place {
   place_city: string;
   place_country: string;
@@ -155,7 +162,7 @@ export interface CatalogOverview {
       imported_at: string | null;
       taken_at: string | null;
     }[];
-    faces: { total: number; assigned: number; unassigned: number };
+    faces: { total: number; assigned: number; unassigned: number; embeddings_ready: number; embeddings_pending: number; clustering_status: FaceEnrichment["clustering_status"] };
     places: { located: number; unlocated: number };
   };
 }

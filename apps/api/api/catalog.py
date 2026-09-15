@@ -177,13 +177,32 @@ def _context(conn: sqlite3.Connection, inventory: dict) -> dict:
         ORDER BY a.thumbnail_id IS NULL, a.created_at IS NULL, a.created_at DESC, a.taken_at DESC LIMIT 6"""
     ).fetchall()
     faces_total = conn.execute("SELECT COUNT(*) FROM faces").fetchone()[0]
+    face_embeds = conn.execute("SELECT COUNT(*) FROM face_embeds").fetchone()[0]
     assigned = conn.execute("SELECT COUNT(DISTINCT face_id) FROM person_faces").fetchone()[0]
+    cluster_job = conn.execute(
+        "SELECT status FROM jobs WHERE kind = 'cluster_faces' ORDER BY id DESC LIMIT 1"
+    ).fetchone()
+    latest_run = conn.execute(
+        "SELECT status FROM clustering_runs ORDER BY id DESC LIMIT 1"
+    ).fetchone()
+    if cluster_job is not None and cluster_job["status"] in ("queued", "working"):
+        clustering_status = "queued" if cluster_job["status"] == "queued" else "running"
+    elif faces_total == 0:
+        clustering_status = "no_faces"
+    elif face_embeds < faces_total:
+        clustering_status = "indexing"
+    elif latest_run is not None and latest_run["status"] == "running":
+        clustering_status = "running"
+    elif latest_run is not None and latest_run["status"] == "completed":
+        clustering_status = "ready" if conn.execute("SELECT COUNT(*) FROM cluster_suggestions WHERE run_id = (SELECT id FROM clustering_runs ORDER BY id DESC LIMIT 1)").fetchone()[0] > 0 else "completed_no_suggestions"
+    else:
+        clustering_status = "ready"
     located = conn.execute("SELECT COUNT(*) FROM assets WHERE deleted = 0 AND gps_lat IS NOT NULL").fetchone()[0]
     total_assets = conn.execute("SELECT COUNT(*) FROM assets WHERE deleted = 0").fetchone()[0]
     return {
         "recent_imports": [dict(row) for row in recent],
         "photos_libraries": inventory["photos_libraries"],
-        "faces": {"total": faces_total, "assigned": assigned, "unassigned": faces_total - assigned},
+        "faces": {"total": faces_total, "assigned": assigned, "unassigned": faces_total - assigned, "embeddings_ready": face_embeds, "embeddings_pending": max(0, faces_total - face_embeds), "clustering_status": clustering_status},
         "places": {"located": located, "unlocated": total_assets - located},
     }
 
