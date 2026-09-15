@@ -3,6 +3,9 @@
   "private": true,
   "packageManager": "pnpm@10.0.0",
   "scripts": {
+    "bridge:build": "swift build --package-path apps/photos-bridge",
+    "bridge:dry-run": "swift run --package-path apps/photos-bridge PicsPhotosBridge --dry-run --limit 25",
+    "bridge:sync": "swift run --package-path apps/photos-bridge PicsPhotosBridge --limit 25",
     "dev": "turbo run dev --filter=web --parallel",
     "dev:docker": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build --watch",
     "dev:docker:build": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build",
