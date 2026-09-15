@@ -19,6 +19,7 @@ body {
 a { color: inherit; text-decoration: none; }
 button, input { font: inherit; }
 button { cursor: pointer; }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .shell { max-width: 1400px; margin: 0 auto; padding: 28px 32px 56px; }
 .topbar { display: flex; justify-content: space-between; align-items: baseline; gap: 24px; margin-bottom: 56px; }
 .brand { font-family: Georgia, serif; font-size: 2rem; letter-spacing: -0.05em; }
@@ -35,12 +36,22 @@ h2 { font: 400 2rem Georgia, serif; letter-spacing: -.04em; }
 .button:hover { background: var(--accent-dark); }
 .hint { color: var(--muted); font-size: .85rem; }
 .status { color: var(--accent-dark); min-height: 1.5rem; }
+.radioGroup { display: grid; gap: 10px; border: 0; margin: 18px 0 0; padding: 0; }
+.radioPrompt { margin: 0; color: var(--muted); font-size: .9rem; line-height: 1.4; }
+.radioOption { display: flex; align-items: flex-start; gap: 9px; cursor: pointer; line-height: 1.35; }
+.radioOption input { flex: 0 0 auto; margin: 3px 0 0; accent-color: var(--accent-dark); }
+.radioCopy { display: grid; gap: 3px; }
+.radioDescription { color: var(--muted); font-size: .85rem; }
+.radioGroup:disabled .radioOption { color: var(--muted); cursor: not-allowed; }
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin-top: 32px; }
 .photo { min-width: 0; overflow: hidden; border-radius: 14px; background: var(--panel); }
 .photo img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; }
 .photo figcaption { padding: 10px 12px; color: var(--muted); font-size: .78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
 .card { border: 1px solid var(--line); border-radius: 16px; padding: 18px; background: #fffdf899; }
+.actionCard { display: flex; flex-direction: column; }
+.cardAction { align-self: flex-end; margin-top: auto; }
 .card strong { display: block; margin-bottom: 8px; }
 .faceRow { display: flex; gap: 6px; min-height: 92px; margin: 12px 0; overflow: auto; }
 .faceRow img { width: 86px; height: 86px; border-radius: 10px; object-fit: cover; background: var(--paper); }
@@ -48,4 +59,4 @@ h2 { font: 400 2rem Georgia, serif; letter-spacing: -.04em; }
 .muted { color: var(--muted); }
 .parkedBanner { position: sticky; top: 0; z-index: 50; padding: 14px 24px; color: white; background: var(--accent); font-weight: 700; text-align: center; }
 .parkedBanner a { color: white; text-decoration: underline; }
-@media (max-width: 650px) { .shell { padding: 20px 18px 40px; } .topbar { align-items: flex-start; flex-direction: column; margin-bottom: 38px; } .searchForm { align-items: stretch; flex-direction: column; } .button { width: 100%; } }
+@media (max-width: 650px) { .shell { padding: 20px 18px 40px; } .topbar { align-items: flex-start; flex-direction: column; margin-bottom: 38px; } .searchForm { align-items: stretch; flex-direction: column; } .button { width: 100%; } .cardAction { align-self: stretch; } }
