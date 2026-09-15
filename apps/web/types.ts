@@ -107,6 +107,13 @@ export type Readiness =
   | "connected"
   | "failed";
 
+export type BridgeStatus =
+  | "offline"
+  | "authorization_required"
+  | "inventory_pending"
+  | "connected"
+  | "syncing";
+
 export interface FunnelStages {
   discovered: number;
   ready_to_import: number;
@@ -122,6 +129,9 @@ export interface SourceOverview {
   display_name: string;
   readiness: Readiness;
   readiness_detail: string | null;
+  bridge_status: BridgeStatus;
+  bridge_last_seen_at: string | null;
+  authorization_state: string | null;
   reported_at: string | null;
   stages: FunnelStages;
   sync: SourceSync | null;

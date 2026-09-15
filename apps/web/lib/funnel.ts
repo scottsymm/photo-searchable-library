@@ -1,4 +1,4 @@
-import type { FunnelStages, Readiness, SourceOverview } from "../types";
+import type { BridgeStatus, FunnelStages, Readiness, SourceOverview } from "../types";
 
 export interface StageMeta {
   key: keyof FunnelStages;
@@ -27,6 +27,18 @@ const READINESS_LABELS: Record<Readiness, string> = {
 
 export function readinessLabel(state: Readiness): string {
   return READINESS_LABELS[state];
+}
+
+const BRIDGE_LABELS: Record<BridgeStatus, string> = {
+  offline: "Bridge offline",
+  authorization_required: "Photos access required",
+  inventory_pending: "Reading Photos library",
+  connected: "Connected",
+  syncing: "Syncing",
+};
+
+export function bridgeLabel(state: BridgeStatus): string {
+  return BRIDGE_LABELS[state];
 }
 
 export function freshnessLabel(source: SourceOverview, now: Date = new Date()): string {

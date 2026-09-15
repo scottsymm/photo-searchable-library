@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { freshnessLabel, readinessLabel, STAGES } from "./funnel";
+import { bridgeLabel, freshnessLabel, readinessLabel, STAGES } from "./funnel";
 import type { SourceOverview } from "../types";
 
 function source(partial: Partial<SourceOverview>): SourceOverview {
   return {
     kind: "apple_photos", display_name: "Apple Photos", readiness: "connected",
     readiness_detail: null, reported_at: null,
+    bridge_status: "connected", bridge_last_seen_at: null, authorization_state: "authorized",
     stages: { discovered: 0, ready_to_import: 0, importing: 0, imported: 0, processing: 0, searchable: 0, failed_or_blocked: 0 },
     sync: null, actions: { can_sync: false }, ...partial,
   };
@@ -29,6 +30,16 @@ describe("readinessLabel", () => {
     expect(readinessLabel("inventory_pending")).toBe("Inventory pending");
     expect(readinessLabel("connected")).toBe("Connected");
     expect(readinessLabel("failed")).toBe("Failed");
+  });
+});
+
+describe("bridgeLabel", () => {
+  it("labels every bridge state", () => {
+    expect(bridgeLabel("offline")).toBe("Bridge offline");
+    expect(bridgeLabel("authorization_required")).toBe("Photos access required");
+    expect(bridgeLabel("inventory_pending")).toBe("Reading Photos library");
+    expect(bridgeLabel("connected")).toBe("Connected");
+    expect(bridgeLabel("syncing")).toBe("Syncing");
   });
 });
 
