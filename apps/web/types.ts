@@ -99,3 +99,48 @@ export interface SourceSync {
   failed_count: number;
   error: string | null;
 }
+
+export type Readiness =
+  | "not_configured"
+  | "authorization_required"
+  | "inventory_pending"
+  | "connected"
+  | "failed";
+
+export interface FunnelStages {
+  discovered: number;
+  ready_to_import: number;
+  importing: number;
+  imported: number;
+  processing: number;
+  searchable: number;
+  failed_or_blocked: number;
+}
+
+export interface SourceOverview {
+  kind: string;
+  display_name: string;
+  readiness: Readiness;
+  readiness_detail: string | null;
+  reported_at: string | null;
+  stages: FunnelStages;
+  sync: SourceSync | null;
+  actions: { can_sync: boolean };
+}
+
+export interface CatalogOverview {
+  generated_at: string;
+  funnel: FunnelStages;
+  sources: SourceOverview[];
+  context: {
+    recent_imports: {
+      id: number;
+      source_kind: string | null;
+      original_filename: string | null;
+      imported_at: string | null;
+      taken_at: string | null;
+    }[];
+    faces: { total: number; assigned: number; unassigned: number };
+    places: { located: number; unlocated: number };
+  };
+}
