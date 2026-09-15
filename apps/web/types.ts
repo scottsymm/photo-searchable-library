@@ -133,6 +133,7 @@ export interface CatalogOverview {
   funnel: FunnelStages;
   sources: SourceOverview[];
   context: {
+    photos_libraries: { name: string; path: string }[];
     recent_imports: {
       id: number;
       source_kind: string | null;

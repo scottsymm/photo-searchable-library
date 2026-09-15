@@ -166,6 +166,19 @@ def test_mounted_discovered_uses_inventory_scan(client, tmp_path, monkeypatch):
     assert mounted["reported_at"] is not None
 
 
+def test_context_reports_detected_photos_libraries(client, tmp_path, monkeypatch):
+    library = tmp_path / "Photos Library.photoslibrary"
+    library.mkdir()
+    monkeypatch.setattr("api.admin.WATCH_ROOT", tmp_path)
+
+    data = _get(client)
+
+    assert data["context"]["photos_libraries"] == [{
+        "name": library.name,
+        "path": str(library),
+    }]
+
+
 def test_apple_reported_at_uses_last_sync_timestamp(client):
     generator, conn = _db(client)
     try:

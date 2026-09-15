@@ -158,7 +158,7 @@ def _uploads_entry(conn, source, active, failed_jobs):
     }
 
 
-def _context(conn: sqlite3.Connection) -> dict:
+def _context(conn: sqlite3.Connection, inventory: dict) -> dict:
     recent = conn.execute(
         """SELECT a.id, s.kind AS source_kind, a.original_filename,
           a.created_at AS imported_at, a.taken_at
@@ -172,6 +172,7 @@ def _context(conn: sqlite3.Connection) -> dict:
     total_assets = conn.execute("SELECT COUNT(*) FROM assets WHERE deleted = 0").fetchone()[0]
     return {
         "recent_imports": [dict(row) for row in recent],
+        "photos_libraries": inventory["photos_libraries"],
         "faces": {"total": faces_total, "assigned": assigned, "unassigned": faces_total - assigned},
         "places": {"located": located, "unlocated": total_assets - located},
     }
@@ -194,5 +195,5 @@ def catalog_overview(conn=Depends(get_conn)):
             funnel[key] += entry["stages"][key]
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "funnel": funnel, "sources": entries, "context": _context(conn),
+        "funnel": funnel, "sources": entries, "context": _context(conn, inventory),
     }
