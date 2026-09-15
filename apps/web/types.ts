@@ -55,6 +55,7 @@ export interface AdminSettings {
 }
 
 export interface AdminStatus {
+  mount_source: string | null;
   watch_root: string;
   root_available: boolean;
   models_ready: boolean;

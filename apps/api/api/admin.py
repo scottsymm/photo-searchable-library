@@ -17,6 +17,7 @@ from .deps import WORKER_URL, get_conn
 
 router = APIRouter()
 WATCH_ROOT = Path(os.environ.get("PICS_WATCH_ROOT", "/media/photos"))
+MOUNT_SOURCE = os.environ.get("PICS_MOUNT_SOURCE")
 MEDIA_SUFFIXES = {".jpg", ".jpeg", ".png", ".heic", ".heif", ".mov", ".mp4", ".avif", ".dng"}
 
 
@@ -52,6 +53,7 @@ def status(conn=Depends(get_conn)):
         "jobs": conn.execute("SELECT COUNT(*) FROM jobs").fetchone()[0],
     }
     return {
+        "mount_source": MOUNT_SOURCE,
         "watch_root": str(WATCH_ROOT),
         "root_available": root_available,
         "models_ready": _models_ready(),

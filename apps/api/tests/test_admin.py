@@ -18,7 +18,7 @@ def test_admin_settings_reject_invalid_value(client):
 def test_admin_status_shape(client):
     response = client.get("/admin/status")
     assert response.status_code == 200
-    assert {"watch_root", "root_available", "models_ready", "counts", "settings"} <= response.json().keys()
+    assert {"mount_source", "watch_root", "root_available", "models_ready", "counts", "settings"} <= response.json().keys()
 
 
 def test_admin_scan_rejects_missing_root(client):

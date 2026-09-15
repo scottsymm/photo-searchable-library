@@ -10,6 +10,7 @@ services:
       PICS_LIBRARY: /library
       PICS_WORKER_URL: http://worker:9090
       PICS_WATCH_ROOT: /media/photos
+      PICS_MOUNT_SOURCE: ${PICS_MOUNT_SOURCE:-$HOME/Pictures}
     volumes:
       - catalog:/data
       - library:/library
