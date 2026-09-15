@@ -124,3 +124,10 @@ def test_library_inventory_cache_resets_when_root_changes(client, monkeypatch, t
     assert r2.status_code == 200
 
     assert len(calls) == 2
+
+
+def test_inventory_scanned_at_tracks_last_scan(client):
+    assert api.admin.inventory_scanned_at() is None
+    response = client.get("/admin/library")
+    assert response.status_code == 200
+    assert api.admin.inventory_scanned_at() is not None

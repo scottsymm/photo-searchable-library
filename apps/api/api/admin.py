@@ -8,6 +8,7 @@ import sqlite3
 import threading
 import time
 from collections import Counter
+from datetime import datetime, timezone
 from pathlib import Path
 
 import httpx
@@ -26,6 +27,7 @@ _INVENTORY_CACHE_TTL = float(os.environ.get("PICS_INVENTORY_CACHE_TTL", "60"))
 _inventory_lock = threading.Lock()
 _inventory_cache: dict | None = None
 _inventory_cached_at: float | None = None
+_inventory_cached_wall_at: float | None = None
 _inventory_cache_root: Path | None = None
 
 
@@ -40,10 +42,11 @@ class ScanRequest(BaseModel):
 
 def _clear_inventory_cache() -> None:
     """Drop the cached library inventory. Intended for tests."""
-    global _inventory_cache, _inventory_cached_at, _inventory_cache_root
+    global _inventory_cache, _inventory_cached_at, _inventory_cached_wall_at, _inventory_cache_root
     with _inventory_lock:
         _inventory_cache = None
         _inventory_cached_at = None
+        _inventory_cached_wall_at = None
         _inventory_cache_root = None
 
 
@@ -124,7 +127,7 @@ def _cached_library_inventory() -> dict:
     already scanning, callers immediately receive the last cached result so
     the thread pool is not consumed by waiting threads.
     """
-    global _inventory_cache, _inventory_cached_at, _inventory_cache_root
+    global _inventory_cache, _inventory_cached_at, _inventory_cached_wall_at, _inventory_cache_root
 
     now = time.monotonic()
     root = WATCH_ROOT
@@ -153,6 +156,7 @@ def _cached_library_inventory() -> dict:
                 return _inventory_cache
             _inventory_cache = _library_inventory()
             _inventory_cached_at = time.monotonic()
+            _inventory_cached_wall_at = time.time()
             _inventory_cache_root = root
             return _inventory_cache
         finally:
@@ -169,8 +173,21 @@ def _cached_library_inventory() -> dict:
             return _inventory_cache
         _inventory_cache = _library_inventory()
         _inventory_cached_at = time.monotonic()
+        _inventory_cached_wall_at = time.time()
         _inventory_cache_root = root
         return _inventory_cache
+
+
+def cached_library_inventory() -> dict:
+    """Public wrapper around the cached inventory scan."""
+    return _cached_library_inventory()
+
+
+def inventory_scanned_at() -> str | None:
+    """ISO timestamp of the last completed inventory scan, if any."""
+    if _inventory_cached_wall_at is None:
+        return None
+    return datetime.fromtimestamp(_inventory_cached_wall_at, timezone.utc).isoformat()
 
 
 @router.get("/status")
