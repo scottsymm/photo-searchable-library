@@ -17,6 +17,9 @@ CREATE TABLE IF NOT EXISTS assets (
   sha256 TEXT NOT NULL,
   size_bytes INTEGER NOT NULL,
   mime TEXT NOT NULL,
+  source_id INTEGER REFERENCES sources(id),
+  source_asset_id TEXT,
+  original_filename TEXT,
   taken_at TEXT,
   gps_lat REAL,
   gps_lon REAL,
@@ -35,6 +38,21 @@ CREATE TABLE IF NOT EXISTS files (
   kind TEXT NOT NULL,
   bytes BLOB,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS sources (
+  id INTEGER PRIMARY KEY,
+  kind TEXT NOT NULL,
+  display_name TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'not_connected',
+  authorization_state TEXT,
+  last_sync_at TEXT,
+  last_error TEXT,
+  asset_count INTEGER NOT NULL DEFAULT 0,
+  imported_count INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(kind)
 );
 
 CREATE TABLE IF NOT EXISTS persons (
@@ -135,6 +153,9 @@ CREATE TABLE IF NOT EXISTS jobs (
 
 CREATE INDEX IF NOT EXISTS assets_taken_at_idx ON assets(taken_at);
 CREATE INDEX IF NOT EXISTS assets_place_idx ON assets(place_city, place_country);
+CREATE UNIQUE INDEX IF NOT EXISTS assets_source_asset_idx
+ON assets(source_id, source_asset_id)
+WHERE source_id IS NOT NULL AND source_asset_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS face_assignments_face_idx ON face_assignments(face_id);
 CREATE INDEX IF NOT EXISTS person_faces_face_idx ON person_faces(face_id);
 CREATE VIRTUAL TABLE IF NOT EXISTS vec0_content USING vec0(
@@ -153,4 +174,8 @@ def migrate(conn: sqlite3.Connection) -> None:
     )
     from .settings import seed
     seed(conn)
+    conn.execute(
+        """INSERT OR IGNORE INTO sources(kind, display_name, status)
+        VALUES ('apple_photos', 'Apple Photos', 'not_connected')"""
+    )
     conn.commit()
