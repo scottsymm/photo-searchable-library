@@ -174,3 +174,26 @@ def test_apple_reported_at_uses_last_sync_timestamp(client):
     finally:
         generator.close()
     assert _source(_get(client), "apple_photos")["reported_at"] == "2026-09-15T14:59:16+00:00"
+
+
+def test_context_blocks(client):
+    generator, conn = _db(client)
+    try:
+        first = _add_asset(conn, "apple_photos", "/library/apple-photos/old.heic", "a" * 64, embedded=True, created_at="2026-09-14T10:00:00+00:00", gps=True)
+        second = _add_asset(conn, "uploads", "/library/imports/new.jpg", "b" * 64, embedded=True, created_at="2026-09-15T10:00:00+00:00")
+        conn.execute("INSERT INTO persons(name) VALUES ('Jane')")
+        person_id = conn.execute("SELECT id FROM persons").fetchone()["id"]
+        conn.execute("INSERT INTO faces(asset_id, bbox) VALUES (?, '[0,0,1,1]')", (first,))
+        face_id = conn.execute("SELECT id FROM faces").fetchone()["id"]
+        conn.execute("INSERT INTO faces(asset_id, bbox) VALUES (?, '[1,1,2,2]')", (second,))
+        conn.execute("INSERT INTO person_faces(person_id, face_id, source) VALUES (?, ?, 'manual')", (person_id, face_id))
+        conn.commit()
+    finally:
+        generator.close()
+    data = _get(client)
+    assert data["context"]["faces"] == {"total": 2, "assigned": 1, "unassigned": 1}
+    assert data["context"]["places"] == {"located": 1, "unlocated": 1}
+    recent = data["context"]["recent_imports"]
+    assert recent[0]["id"] == second
+    assert recent[0]["source_kind"] == "uploads"
+    assert recent[1]["id"] == first
