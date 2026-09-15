@@ -40,7 +40,7 @@ function RecentImport(props: { asset: CatalogOverview["context"]["recent_imports
   return (
     <figure className="photo">
       {thumbnailFailed ? <div className="photoPlaceholder" role="img" aria-label={`${filename} preview pending`}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z" /><path d="M14 3v5h5M9 16h6M9 12h3" /></svg><span>Preview pending</span></div> : <img src={thumbnailUrl(asset.id)} alt={filename} loading="lazy" onError={() => setThumbnailFailed(true)} />}
-      <figcaption><strong className="assetName" title={filename}>{filename}</strong><span className="sourceName">{sourceName}</span></figcaption>
+      <figcaption><span className="assetNameWrap" data-tooltip={filename}><strong className="assetName" tabIndex={0} aria-label={filename}>{filename}</strong></span><span className="sourceName">{sourceName}</span></figcaption>
     </figure>
   );
 }
