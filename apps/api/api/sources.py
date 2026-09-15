@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import json
 import shutil
 import uuid
 from datetime import datetime, timezone
@@ -32,6 +33,13 @@ class KnownAssetsRequest(BaseModel):
 
 def _sync_dict(row):
     return dict(row) if row is not None else None
+
+
+def _active_import_exists(conn, path: str) -> bool:
+    rows = conn.execute(
+        "SELECT params FROM jobs WHERE kind = 'import' AND status IN ('queued', 'working')"
+    ).fetchall()
+    return any(path in json.loads(row["params"] or "{}").get("paths", []) for row in rows)
 
 
 @router.post("/apple-photos/sync")
@@ -116,7 +124,8 @@ def apple_photos_status(conn=Depends(get_conn)):
     source = dict(get_source(conn, "apple_photos"))
     imported = conn.execute(
         """SELECT COUNT(*) FROM assets
-        WHERE source_id = ? AND deleted = 0 AND sha256 != ''""",
+        WHERE source_id = ? AND deleted = 0
+          AND EXISTS (SELECT 1 FROM content_embeds WHERE asset_id = assets.id)""",
         (source["id"],),
     ).fetchone()[0]
     source["imported_count"] = imported
@@ -136,11 +145,13 @@ async def ingest_apple_photos_asset(
 ):
     source = get_source(conn, "apple_photos")
     existing = conn.execute(
-        """SELECT id, path FROM assets
+        """SELECT assets.id, assets.path,
+          EXISTS (SELECT 1 FROM content_embeds WHERE asset_id = assets.id) AS processed
+        FROM assets
         WHERE source_id = ? AND source_asset_id = ? AND deleted = 0""",
         (source["id"], source_asset_id),
     ).fetchone()
-    if existing is not None and existing["path"]:
+    if existing is not None and existing["path"] and Path(existing["path"]).is_file():
         mark_source_status(
             conn,
             source_id=source["id"],
@@ -148,11 +159,22 @@ async def ingest_apple_photos_asset(
             authorization_state=authorization_state,
             asset_count=asset_count,
         )
+        if existing["processed"] or _active_import_exists(conn, existing["path"]):
+            return {
+                "status": "duplicate",
+                "duplicate": True,
+                "asset_id": existing["id"],
+                "source_asset_id": source_asset_id,
+            }
+        job_id = jobs.push(conn, "import", {"paths": [existing["path"]]})
         return {
-            "status": "duplicate",
+            "status": "queued",
             "duplicate": True,
+            "retried": True,
             "asset_id": existing["id"],
+            "job_id": job_id,
             "source_asset_id": source_asset_id,
+            "path": existing["path"],
         }
 
     suffix = Path(original_filename or file.filename or "photo.jpg").suffix.lower() or ".jpg"
