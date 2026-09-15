@@ -62,3 +62,20 @@ def test_upsert_source_asset_is_idempotent():
     )
     assert first == second
     assert conn.execute("SELECT COUNT(*) FROM assets").fetchone()[0] == 1
+
+
+def test_classify_path_maps_library_and_watch_root(tmp_path, monkeypatch):
+    from core.sources import classify_path
+
+    library = tmp_path / "library"
+    watch = tmp_path / "watch"
+    (library / "apple-photos").mkdir(parents=True)
+    (library / "imports").mkdir(parents=True)
+    watch.mkdir()
+    monkeypatch.setattr("core.sources.LIBRARY", library)
+    monkeypatch.setattr("core.sources.WATCH_ROOT", watch)
+
+    assert classify_path(str(library / "apple-photos" / "a.heic")) == "apple_photos"
+    assert classify_path(str(library / "imports" / "b.jpg")) == "uploads"
+    assert classify_path(str(watch / "c.jpg")) == "mounted_folder"
+    assert classify_path(str(tmp_path / "elsewhere.jpg")) is None
