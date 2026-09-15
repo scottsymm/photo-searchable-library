@@ -38,7 +38,7 @@ function RecentImport(props: { asset: CatalogOverview["context"]["recent_imports
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
   return (
     <figure className="photo">
-      {thumbnailFailed ? <div className="photoPlaceholder" role="img" aria-label="Thumbnail not available"><span>Thumbnail<br />not ready</span></div> : <img src={thumbnailUrl(asset.id)} alt={asset.original_filename ?? "Imported asset"} loading="lazy" onError={() => setThumbnailFailed(true)} />}
+      {thumbnailFailed ? <div className="photoPlaceholder" role="img" aria-label={`${asset.original_filename ?? `Asset ${asset.id}`} thumbnail not available`}><span><strong>{asset.original_filename ?? `Asset ${asset.id}`}</strong><br />Thumbnail not ready</span></div> : <img src={thumbnailUrl(asset.id)} alt={asset.original_filename ?? "Imported asset"} loading="lazy" onError={() => setThumbnailFailed(true)} />}
       <figcaption>{sourceName}</figcaption>
     </figure>
   );
