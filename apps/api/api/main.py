@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from core.schema import migrate
 
-from . import admin, jobs, persons, places, search, uploads
+from . import admin, jobs, persons, places, search, sources, uploads
 from .deps import DB_PATH
 from core.conn import connect
 
@@ -26,6 +26,7 @@ app.include_router(uploads.router, prefix="/assets", tags=["assets"])
 app.include_router(jobs.router, prefix="/jobs", tags=["jobs"])
 app.include_router(persons.router, prefix="/persons", tags=["persons"])
 app.include_router(places.router, prefix="/places", tags=["places"])
+app.include_router(sources.router, prefix="/sources", tags=["sources"])
 
 
 @app.get("/")

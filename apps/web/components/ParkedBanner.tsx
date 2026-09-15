@@ -3,12 +3,19 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { adminStatus } from "../lib/api";
+import { adminStatus, applePhotosStatus } from "../lib/api";
 
 export function ParkedBanner() {
-  const [show, setShow] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
   useEffect(() => {
-    adminStatus().then((status) => setShow(status.settings.watch_enabled === "0")).catch(() => setShow(false));
+    Promise.all([adminStatus(), applePhotosStatus()]).then(([status, source]) => {
+      if (status.settings.watch_enabled !== "0") return;
+      if (source.status === "connected" && source.imported_count > 0) {
+        setMessage(`Folder watch is paused. Apple Photos has imported ${source.imported_count.toLocaleString()} assets.`);
+        return;
+      }
+      setMessage("Folder watch is paused. Configure folder ingest in settings.");
+    }).catch(() => setMessage(null));
   }, []);
-  return show ? <div className="parkedBanner"><Link href="/settings">Photos are not being imported yet — configure ingest</Link></div> : null;
+  return message ? <div className="parkedBanner"><Link href="/settings">{message}</Link></div> : null;
 }

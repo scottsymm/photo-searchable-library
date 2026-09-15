@@ -30,6 +30,14 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); ou
 h1 { max-width: 760px; margin: 10px 0 24px; font: 400 clamp(2.7rem, 7vw, 6rem)/.94 Georgia, serif; letter-spacing: -.06em; }
 h2 { font: 400 2rem Georgia, serif; letter-spacing: -.04em; }
 .lead { max-width: 640px; color: var(--muted); line-height: 1.6; }
+.sourceSummary { max-width: 760px; margin: -8px 0 18px; color: var(--ink); font-weight: 700; line-height: 1.5; }
+.syncControls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 0 0 18px; }
+.syncControls .status, .syncControls .muted { margin: 0; }
+.dialogBackdrop { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 24px; background: #15211d99; }
+.dialog { width: min(100%, 520px); border: 1px solid var(--line); border-radius: 22px; padding: 28px; background: var(--panel); box-shadow: 0 24px 80px #15211d33; }
+.dialog h2 { margin: 10px 0 12px; }
+.dialog p { line-height: 1.55; }
+.dialogActions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
 .searchForm { display: flex; gap: 10px; max-width: 820px; margin: 28px 0 16px; }
 .searchInput { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 999px; padding: 15px 20px; background: var(--panel); outline: none; }
 .searchInput:focus { border-color: var(--accent); box-shadow: 0 0 0 4px #d86a4322; }

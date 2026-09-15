@@ -97,6 +97,44 @@ curl http://localhost:8000/jobs
 curl http://localhost:8000/jobs/1
 ```
 
+## Apple Photos Bridge
+
+Apple Photos libraries are application-managed packages. Do not rely on Docker
+traversing `Photos Library.photoslibrary`; use the native macOS bridge instead.
+
+Build the bridge:
+
+```bash
+cd apps/photos-bridge
+swift build
+```
+
+Preview what PhotoKit can see without importing:
+
+```bash
+swift run PicsPhotosBridge --dry-run --limit 25
+```
+
+Import a bounded batch into the local API:
+
+```bash
+swift run PicsPhotosBridge --limit 25
+```
+
+For UI-triggered imports, keep the local bridge watching for requests:
+
+```bash
+pnpm bridge:watch
+```
+
+The Photos page offers both a bounded recent sync and a **Full sync**. Full
+sync enumerates the entire PhotoKit library but asks the API which stable Apple
+asset IDs are already present, so it uploads only missing assets.
+
+The first run asks macOS for Photos access. Phase 1 imports primary image and
+video resources with stable Apple asset identifiers. Albums, Apple People,
+edits, deletion propagation, and background scheduling are deferred.
+
 ## Search
 
 Use the web UI or the API:

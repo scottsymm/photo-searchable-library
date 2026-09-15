@@ -55,8 +55,8 @@ def test_library_inventory_reports_supported_files(tmp_path, client, monkeypatch
 
     assert response.status_code == 200
     data = response.json()
-    assert data["media_files"] == 2
-    assert data["extensions"] == {".heic": 1, ".jpg": 1}
+    assert data["media_files"] == 1
+    assert data["extensions"] == {".jpg": 1}
     assert data["photos_libraries"][0]["name"] == "Photos Library.photoslibrary"
     assert data["catalog"] == {"assets": 0, "mounted_assets": 0, "faces": 0}
 

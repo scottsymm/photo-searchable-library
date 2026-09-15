@@ -1,4 +1,4 @@
-import type { AdminSettings, AdminStatus, Asset, ClusterSuggestion, Job, LibraryInventory, Person, Place } from "../types";
+import type { AdminSettings, AdminStatus, Asset, ClusterSuggestion, Job, LibraryInventory, Person, Place, SourceStatus, SourceSync } from "../types";
 
 const API = process.env.NEXT_PUBLIC_PICS_API_URL ?? "http://localhost:8000";
 
@@ -91,4 +91,26 @@ export async function queueAdminScan(root?: string): Promise<void> {
     body: JSON.stringify(root ? { root } : {}),
   });
   if (!response.ok) throw new Error("Scan request failed");
+}
+
+export async function applePhotosStatus(): Promise<SourceStatus> {
+  const response = await fetch(apiUrl("/sources/apple-photos/status"), { cache: "no-store" });
+  if (!response.ok) throw new Error("Apple Photos status request failed");
+  return (await response.json()).source;
+}
+
+export async function requestApplePhotosSync(limit = 25, full = false): Promise<SourceSync> {
+  const response = await fetch(apiUrl("/sources/apple-photos/sync"), {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ limit, full }),
+  });
+  if (!response.ok) throw new Error("Apple Photos sync request failed");
+  return (await response.json()).sync;
+}
+
+export async function applePhotosSyncStatus(): Promise<SourceSync | null> {
+  const response = await fetch(apiUrl("/sources/apple-photos/sync/status"), { cache: "no-store" });
+  if (!response.ok) throw new Error("Apple Photos sync status request failed");
+  return (await response.json()).sync;
 }

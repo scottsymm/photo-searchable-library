@@ -15,6 +15,9 @@ coverage/
 .turbo/
 *.tsbuildinfo
 
+# SwiftPM
+.build/
+
 # Runtime data
 catalog.db*
 library/
