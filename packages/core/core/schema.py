@@ -167,6 +167,16 @@ CREATE VIRTUAL TABLE IF NOT EXISTS vec0_face USING vec0(
 
 
 def migrate(conn: sqlite3.Connection) -> None:
+    existing_asset_columns = {
+        row["name"] for row in conn.execute("PRAGMA table_info(assets)")
+    }
+    for column, definition in (
+        ("source_id", "INTEGER REFERENCES sources(id)"),
+        ("source_asset_id", "TEXT"),
+        ("original_filename", "TEXT"),
+    ):
+        if existing_asset_columns and column not in existing_asset_columns:
+            conn.execute(f"ALTER TABLE assets ADD COLUMN {column} {definition}")
     conn.executescript(SCHEMA)
     conn.execute(
         "INSERT OR REPLACE INTO schema_meta(key, value) VALUES ('version', '3')"
