@@ -21,6 +21,16 @@ export default function SettingsPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const hasActiveJobs = items.some((job) => job.status === "queued" || job.status === "working");
+
+  useEffect(() => {
+    if (!hasActiveJobs) return;
+    const timer = window.setInterval(() => {
+      jobs().then(setItems).catch(() => setMessage("Could not refresh job progress."));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [hasActiveJobs]);
+
   async function toggleWatch() {
     if (!status) return;
     await updateAdminSettings({ watch_enabled: status.settings.watch_enabled === "1" ? "0" : "1" });
@@ -29,6 +39,18 @@ export default function SettingsPage() {
 
   async function setBackfill(value: "prompt" | "backfill") {
     await updateAdminSettings({ watch_backfill: value });
+    await reload();
+  }
+
+  async function queueScan() {
+    await queueAdminScan();
+    setMessage("Library scan queued.");
+    await reload();
+  }
+
+  async function queueFaceClustering() {
+    await queueClustering();
+    setMessage("Clustering queued.");
     await reload();
   }
 
@@ -42,12 +64,12 @@ export default function SettingsPage() {
     <div className="cards">
       <div className="card"><strong>Mounted directory</strong><div className="mountPaths"><p><span className="mountLabel">Host source</span><code>{status.mount_source ?? "Source not reported"}</code></p><p><span className="mountLabel">App sees</span><code>{status.watch_root}</code></p></div><p className="mountState">{status.root_available ? "Available to the app" : "Not available to the app"}</p><p className="hint">The host folder is mounted read-only. Change it with <code>PICS_MOUNT_SOURCE</code> in Docker Compose, then restart Docker.</p></div>
       <div className="card actionCard"><strong>Continuous watch</strong><p className="muted">{watching ? "Enabled" : "Paused"}</p><p className="hint">Automatically import photos added to the library while watch is enabled.</p><fieldset className="radioGroup" disabled={watchInitialized}><legend>Existing photos</legend><p className="radioPrompt">When watch starts, what should happen to photos already in your library?</p><label className="radioOption"><input type="radio" name="watch-backfill" value="prompt" checked={status.settings.watch_backfill !== "backfill"} onChange={() => setBackfill("prompt")} /> <span className="radioCopy"><span>New photos only</span><span className="radioDescription">Leave existing photos untouched.</span></span></label><label className="radioOption"><input type="radio" name="watch-backfill" value="backfill" checked={status.settings.watch_backfill === "backfill"} onChange={() => setBackfill("backfill")} /> <span className="radioCopy"><span>Existing and new photos</span><span className="radioDescription">Import the current library, then watch for new photos.</span></span></label></fieldset>{watchInitialized && <p className="hint">The initial watch setup is complete.</p>}<button className="button cardAction" onClick={toggleWatch}>{watching ? "Pause watch" : "Enable watch"}</button></div>
-      <div className="card actionCard"><strong>Library scan</strong><p className="muted">Import all existing media immediately, without enabling continuous watch.</p><button className="button cardAction" onClick={() => queueAdminScan().then(() => setMessage("Library scan queued."))}>Scan library now</button></div>
+      <div className="card actionCard"><strong>Library scan</strong><p className="muted">Import all existing media immediately, without enabling continuous watch.</p><button className="button cardAction" onClick={queueScan}>Scan library now</button></div>
     </div>
     <h2>Jobs</h2>
     <div className="cards">{items.map((job) => <div className="card" key={job.id}><strong>#{job.id} · {job.kind}</strong><span className="muted">{job.status} · {Math.round(job.progress * 100)}%</span>{job.error && <p className="status">{job.error}</p>}</div>)}</div>
     {items.length === 0 && <p className="muted">No jobs yet.</p>}
-    <h2>Clustering</h2><button className="button" onClick={() => queueClustering().then(() => setMessage("Clustering queued."))}>Run clustering</button>
+    <h2>Clustering</h2><button className="button" onClick={queueFaceClustering}>Run clustering</button>
     <h2>Status</h2><div className="cards"><div className="card"><strong>Catalog</strong><span className="muted">{status.counts.assets} assets · {status.counts.faces} faces · {status.counts.persons} people</span></div><div className="card"><strong>Models</strong><span className="muted">{status.models_ready ? "Ready" : "Loading"}</span></div>{status.disk && <div className="card"><strong>Disk</strong><span className="muted">{Math.round(status.disk.free / 1e9)} GB free</span></div>}</div>
     <p className="status" aria-live="polite">{message}</p>
   </main>;
