@@ -53,6 +53,11 @@ h2 { font: 400 2rem Georgia, serif; letter-spacing: -.04em; }
 .actionCard { display: flex; flex-direction: column; }
 .cardAction { align-self: flex-end; margin-top: auto; }
 .card strong { display: block; margin-bottom: 8px; }
+.mountPaths { display: grid; gap: 10px; margin: 18px 0; }
+.mountPaths p { display: grid; gap: 4px; margin: 0; }
+.mountLabel { color: var(--muted); font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.mountPaths code { overflow-wrap: anywhere; font-size: .95rem; }
+.mountState { margin: 0; color: var(--accent-dark); font-size: .9rem; font-weight: 700; }
 .faceRow { display: flex; gap: 6px; min-height: 92px; margin: 12px 0; overflow: auto; }
 .faceRow img { width: 86px; height: 86px; border-radius: 10px; object-fit: cover; background: var(--paper); }
 .secondary { color: var(--ink); background: var(--line); }

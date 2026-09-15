@@ -52,6 +52,7 @@ def status(conn=Depends(get_conn)):
         "jobs": conn.execute("SELECT COUNT(*) FROM jobs").fetchone()[0],
     }
     return {
+        "mount_source": os.environ.get("PICS_MOUNT_SOURCE"),
         "watch_root": str(WATCH_ROOT),
         "root_available": root_available,
         "models_ready": _models_ready(),
