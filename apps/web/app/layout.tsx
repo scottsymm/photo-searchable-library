@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Nav } from "../components/Nav";
 import { ParkedBanner } from "../components/ParkedBanner";
 import "./globals.css";
 
@@ -15,12 +16,7 @@ export default function Layout({ children }: Readonly<{ children: React.ReactNod
         <div className="shell">
           <header className="topbar">
             <Link className="brand" href="/">pics.</Link>
-            <nav className="nav">
-              <Link href="/people">People</Link>
-              <Link href="/places">Places</Link>
-              <Link href="/photos">Photos</Link>
-              <Link href="/settings">Settings</Link>
-            </nav>
+            <Nav />
           </header>
           <ParkedBanner />
           {children}
