@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import shutil
+from collections import Counter
 from pathlib import Path
 
 import httpx
@@ -37,6 +38,46 @@ def _models_ready() -> bool:
         return False
 
 
+def _library_inventory() -> dict:
+    """Report what the mounted source exposes without importing anything."""
+    suffixes = Counter()
+    photos_libraries = []
+    media_files = 0
+    directories_with_errors = []
+
+    if not WATCH_ROOT.is_dir():
+        return {
+            "root": str(WATCH_ROOT),
+            "available": False,
+            "media_files": 0,
+            "extensions": {},
+            "photos_libraries": [],
+            "directory_errors": [],
+        }
+
+    for directory, dirnames, filenames in os.walk(
+        WATCH_ROOT, onerror=lambda error: directories_with_errors.append(str(error))
+    ):
+        directory_path = Path(directory)
+        for dirname in dirnames:
+            if dirname.endswith(".photoslibrary"):
+                photos_libraries.append({"name": dirname, "path": str(directory_path / dirname)})
+        for filename in filenames:
+            suffix = Path(filename).suffix.lower()
+            if suffix in MEDIA_SUFFIXES:
+                media_files += 1
+                suffixes[suffix] += 1
+
+    return {
+        "root": str(WATCH_ROOT),
+        "available": True,
+        "media_files": media_files,
+        "extensions": dict(sorted(suffixes.items())),
+        "photos_libraries": photos_libraries,
+        "directory_errors": directories_with_errors[:20],
+    }
+
+
 @router.get("/status")
 def status(conn=Depends(get_conn)):
     root_available = WATCH_ROOT.is_dir()
@@ -65,6 +106,21 @@ def status(conn=Depends(get_conn)):
 @router.get("/settings")
 def read_settings(conn=Depends(get_conn)):
     return {"settings": get_all(conn)}
+
+
+@router.get("/library")
+def library_inventory(conn=Depends(get_conn)):
+    inventory = _library_inventory()
+    root = str(WATCH_ROOT.resolve())
+    prefix = f"{root}{os.sep}%"
+    inventory["catalog"] = {
+        "assets": conn.execute("SELECT COUNT(*) FROM assets WHERE deleted = 0").fetchone()[0],
+        "mounted_assets": conn.execute(
+            "SELECT COUNT(*) FROM assets WHERE deleted = 0 AND path LIKE ?", (prefix,)
+        ).fetchone()[0],
+        "faces": conn.execute("SELECT COUNT(*) FROM faces").fetchone()[0],
+    }
+    return inventory
 
 
 @router.patch("/settings")

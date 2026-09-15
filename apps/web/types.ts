@@ -63,3 +63,13 @@ export interface AdminStatus {
   counts: { assets: number; faces: number; persons: number; jobs: number };
   settings: AdminSettings;
 }
+
+export interface LibraryInventory {
+  root: string;
+  available: boolean;
+  media_files: number;
+  extensions: Record<string, number>;
+  photos_libraries: { name: string; path: string }[];
+  directory_errors: string[];
+  catalog: { assets: number; mounted_assets: number; faces: number };
+}

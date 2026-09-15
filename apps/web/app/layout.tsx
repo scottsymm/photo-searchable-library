@@ -18,6 +18,7 @@ export default function Layout({ children }: Readonly<{ children: React.ReactNod
             <nav className="nav">
               <Link href="/people">People</Link>
               <Link href="/places">Places</Link>
+              <Link href="/photos">Photos</Link>
               <Link href="/settings">Settings</Link>
             </nav>
           </header>

@@ -31,3 +31,19 @@ def test_admin_status_shape(client):
 def test_admin_scan_rejects_missing_root(client):
     response = client.post("/admin/scan", json={"root": "/does/not/exist"})
     assert response.status_code == 400
+
+
+def test_library_inventory_reports_supported_files(tmp_path, client, monkeypatch):
+    (tmp_path / "Photos Library.photoslibrary").mkdir()
+    (tmp_path / "Photos Library.photoslibrary" / "original.heic").write_bytes(b"photo")
+    (tmp_path / "cover.jpg").write_bytes(b"photo")
+    monkeypatch.setattr("api.admin.WATCH_ROOT", tmp_path)
+
+    response = client.get("/admin/library")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["media_files"] == 2
+    assert data["extensions"] == {".heic": 1, ".jpg": 1}
+    assert data["photos_libraries"][0]["name"] == "Photos Library.photoslibrary"
+    assert data["catalog"] == {"assets": 0, "mounted_assets": 0, "faces": 0}
