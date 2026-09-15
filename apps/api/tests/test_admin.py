@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 import api.admin
@@ -76,6 +78,29 @@ def test_library_inventory_reuses_cached_scan(client, monkeypatch):
 
     assert len(calls) == 1
     assert r1.json() == r2.json()
+
+
+def test_library_inventory_escapes_like_wildcards(client, monkeypatch):
+    from api.deps import get_conn
+
+    monkeypatch.setattr(api.admin, "WATCH_ROOT", Path("/media/Photos_2026"))
+    generator = client.app.dependency_overrides[get_conn]()
+    conn = next(generator)
+    try:
+        conn.executemany(
+            "INSERT INTO assets(path, sha256, size_bytes, mime) VALUES (?, ?, 1, 'image/jpeg')",
+            [
+                ("/media/Photos_2026/inside.jpg", "a" * 64),
+                ("/media/PhotosX2026/outside_match.jpg", "b" * 64),
+            ],
+        )
+        conn.commit()
+    finally:
+        generator.close()
+
+    response = client.get("/admin/library")
+    assert response.status_code == 200
+    assert response.json()["catalog"]["mounted_assets"] == 1
 
 
 def test_library_inventory_cache_resets_when_root_changes(client, monkeypatch, tmp_path_factory):

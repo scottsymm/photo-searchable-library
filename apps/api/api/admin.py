@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import sqlite3
 import threading
 import time
 from collections import Counter
@@ -92,6 +93,26 @@ def _library_inventory() -> dict:
         "photos_libraries": photos_libraries,
         "directory_errors": directories_with_errors[:20],
     }
+
+
+def _escape_like(value: str) -> str:
+    """Escape characters that are special in a SQL LIKE pattern."""
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
+def _mounted_assets_count(conn: sqlite3.Connection, root: Path) -> int:
+    """Count non-deleted assets whose path lives under ``root`` literally.
+
+    This escapes SQL LIKE wildcards in the root path so characters such as
+    ``_`` and ``%`` are treated as literals, not wildcards.
+    """
+    root_str = str(root.resolve())
+    prefix = f"{_escape_like(root_str)}{_escape_like(os.sep)}%"
+    row = conn.execute(
+        "SELECT COUNT(*) FROM assets WHERE deleted = 0 AND path LIKE ? ESCAPE '\\'",
+        (prefix,),
+    ).fetchone()
+    return row[0]
 
 
 def _cached_library_inventory() -> dict:
@@ -183,13 +204,9 @@ def read_settings(conn=Depends(get_conn)):
 @router.get("/library")
 def library_inventory(conn=Depends(get_conn)):
     inventory = _cached_library_inventory().copy()
-    root = str(WATCH_ROOT.resolve())
-    prefix = f"{root}{os.sep}%"
     inventory["catalog"] = {
         "assets": conn.execute("SELECT COUNT(*) FROM assets WHERE deleted = 0").fetchone()[0],
-        "mounted_assets": conn.execute(
-            "SELECT COUNT(*) FROM assets WHERE deleted = 0 AND path LIKE ?", (prefix,)
-        ).fetchone()[0],
+        "mounted_assets": _mounted_assets_count(conn, WATCH_ROOT),
         "faces": conn.execute("SELECT COUNT(*) FROM faces").fetchone()[0],
     }
     return inventory
