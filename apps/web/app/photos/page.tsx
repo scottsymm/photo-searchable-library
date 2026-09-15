@@ -12,6 +12,14 @@ function badgeClass(source: SourceOverview): string {
   return "badge badgeMuted";
 }
 
+function bridgeNextStep(source: SourceOverview): string | null {
+  if (source.kind !== "apple_photos") return null;
+  if (source.readiness === "not_configured") return "Start the macOS bridge to connect this library.";
+  if (source.readiness === "authorization_required") return "Allow Pics access to Photos when macOS prompts, then restart the bridge.";
+  if (source.readiness === "inventory_pending") return "Keep the bridge running while it reports the Photos library inventory.";
+  return null;
+}
+
 function SourceCard(props: { source: SourceOverview; sync: SourceSync | null; syncing: boolean; onSync: (full: boolean) => void; onRequestFullSync: () => void }) {
   const { source, sync, syncing, onSync, onRequestFullSync } = props;
   const syncActive = sync !== null && ["queued", "running"].includes(sync.status);
@@ -20,6 +28,7 @@ function SourceCard(props: { source: SourceOverview; sync: SourceSync | null; sy
     <div className="card actionCard">
       <strong>{source.display_name} <span className={badgeClass(source)}>{readinessLabel(source.readiness)}</span></strong>
       {numbersHidden ? <span className="muted">{source.readiness_detail ?? "No inventory reported yet."}</span> : <div className="sourceFacts"><span>{source.stages.discovered.toLocaleString()} discovered · {source.stages.searchable.toLocaleString()} searchable</span><span className="muted">{freshnessLabel(source)}</span>{source.readiness === "failed" && source.readiness_detail && <span className="status">{source.readiness_detail}</span>}</div>}
+      {bridgeNextStep(source) && <div className="nextStep"><strong>Next step</strong><span>{bridgeNextStep(source)}</span><code>cd apps/photos-bridge &amp;&amp; swift run PicsPhotosBridge --watch --poll-interval 5</code><span>Then return here and choose <strong>Sync latest 25</strong>.</span></div>}
       {source.actions.can_sync && <div className="syncControls"><button className="button" onClick={() => onSync(false)} disabled={syncing || syncActive}>{sync?.status === "queued" ? "Waiting for bridge…" : sync?.status === "running" ? "Sync in progress…" : syncing ? "Requesting sync…" : "Sync latest 25"}</button><button className="button secondary" onClick={onRequestFullSync} disabled={syncing || syncActive}>Full sync</button>{sync?.status === "done" && <span className="muted">Last {sync.full_sync ? "full" : "bounded"} sync imported {sync.imported_count.toLocaleString()} assets.</span>}{sync?.status === "partial" && <span className="status">Partial sync: {sync.imported_count.toLocaleString()} imported, {sync.failed_count.toLocaleString()} failed.</span>}</div>}
       {!source.actions.can_sync && <span className="muted cardAction">Read-only in v1</span>}
     </div>
