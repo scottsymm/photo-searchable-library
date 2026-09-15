@@ -12,10 +12,19 @@ struct BridgeOptions {
 struct SyncRequest: Codable {
     let id: Int
     let limit_count: Int
+    let full_sync: Int
 }
 
 struct SyncResponse: Codable {
     let sync: SyncRequest?
+}
+
+struct KnownAssetsRequest: Codable {
+    let source_asset_ids: [String]
+}
+
+struct KnownAssetsResponse: Codable {
+    let source_asset_ids: [String]
 }
 
 func parseOptions() -> BridgeOptions {
@@ -46,18 +55,24 @@ func parseOptions() -> BridgeOptions {
     return options
 }
 
-func apiRequest(_ path: String, method: String, body: Data? = nil, options: BridgeOptions) async throws -> Data {
+func apiRequest(_ path: String, method: String, body: Data? = nil, contentType: String = "application/x-www-form-urlencoded", options: BridgeOptions) async throws -> Data {
     var request = URLRequest(url: options.apiURL.appendingPathComponent(path))
     request.httpMethod = method
     request.httpBody = body
     if body != nil {
-        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        request.setValue(contentType, forHTTPHeaderField: "Content-Type")
     }
     let (data, response) = try await URLSession.shared.data(for: request)
     guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
         throw NSError(domain: "PicsPhotosBridge", code: 2, userInfo: [NSLocalizedDescriptionKey: String(data: data, encoding: .utf8) ?? "API request failed"])
     }
     return data
+}
+
+func knownAssetIDs(_ sourceAssetIDs: [String], options: BridgeOptions) async throws -> Set<String> {
+    let body = try JSONEncoder().encode(KnownAssetsRequest(source_asset_ids: sourceAssetIDs))
+    let data = try await apiRequest("/sources/apple-photos/assets/known", method: "POST", body: body, contentType: "application/json", options: options)
+    return Set(try JSONDecoder().decode(KnownAssetsResponse.self, from: data).source_asset_ids)
 }
 
 func claimSync(options: BridgeOptions) async throws -> SyncRequest? {
@@ -151,19 +166,31 @@ func upload(asset: PHAsset, resource: PHAssetResource, fileURL: URL, assetCount:
     }
 }
 
-func syncAssets(options: BridgeOptions, limit: Int) async throws -> Int {
+func syncAssets(options: BridgeOptions, limit: Int, fullSync: Bool = false) async throws -> Int {
     let fetchOptions = PHFetchOptions()
     fetchOptions.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
     let assets = PHAsset.fetchAssets(with: fetchOptions)
     print("asset_count=\(assets.count)")
 
     let count = min(limit, assets.count)
+    var assetsToImport: [PHAsset] = []
+    if fullSync {
+        let chunkSize = 500
+        for start in stride(from: 0, to: assets.count, by: chunkSize) {
+            let end = min(start + chunkSize, assets.count)
+            let candidates = (start..<end).map { assets.object(at: $0) }
+            let known = try await knownAssetIDs(candidates.map(\.localIdentifier), options: options)
+            assetsToImport.append(contentsOf: candidates.filter { !known.contains($0.localIdentifier) })
+        }
+        print("assets_to_import=\(assetsToImport.count)")
+    } else {
+        assetsToImport = (0..<count).map { assets.object(at: $0) }
+    }
     let temporaryDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     try? FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
     var importedCount = 0
 
-    for index in 0..<count {
-        let asset = assets.object(at: index)
+    for asset in assetsToImport {
         guard let resource = primaryResource(for: asset) else {
             print("skip=\(asset.localIdentifier) reason=no-resource")
             continue
@@ -199,7 +226,7 @@ struct PicsPhotosBridge {
                 do {
                     if let sync = try await claimSync(options: options) {
                         print("sync_started=\(sync.id) limit=\(sync.limit_count)")
-                        let importedCount = try await syncAssets(options: options, limit: sync.limit_count)
+                        let importedCount = try await syncAssets(options: options, limit: sync.limit_count, fullSync: sync.full_sync == 1)
                         try await completeSync(sync, importedCount: importedCount, options: options)
                         print("sync_completed=\(sync.id) imported=\(importedCount)")
                     }

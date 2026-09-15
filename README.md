@@ -121,6 +121,16 @@ Import a bounded batch into the local API:
 swift run PicsPhotosBridge --limit 25
 ```
 
+For UI-triggered imports, keep the local bridge watching for requests:
+
+```bash
+pnpm bridge:watch
+```
+
+The Photos page offers both a bounded recent sync and a **Full sync**. Full
+sync enumerates the entire PhotoKit library but asks the API which stable Apple
+asset IDs are already present, so it uploads only missing assets.
+
 The first run asks macOS for Photos access. Phase 1 imports primary image and
 video resources with stable Apple asset identifiers. Albums, Apple People,
 edits, deletion propagation, and background scheduling are deferred.

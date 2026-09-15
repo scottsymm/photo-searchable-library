@@ -23,6 +23,11 @@ LIBRARY = Path(os.environ.get("PICS_LIBRARY", "library"))
 
 class SyncRequest(BaseModel):
     limit: int = Field(default=25, ge=1, le=500)
+    full: bool = False
+
+
+class KnownAssetsRequest(BaseModel):
+    source_asset_ids: list[str] = Field(min_length=1, max_length=500)
 
 
 def _sync_dict(row):
@@ -41,12 +46,24 @@ def request_apple_photos_sync(request: SyncRequest, conn=Depends(get_conn)):
     if active is not None:
         return {"sync": _sync_dict(active), "already_active": True}
     cursor = conn.execute(
-        "INSERT INTO source_syncs(source_id, limit_count) VALUES (?, ?)",
-        (source["id"], request.limit),
+        "INSERT INTO source_syncs(source_id, limit_count, full_sync) VALUES (?, ?, ?)",
+        (source["id"], request.limit, int(request.full)),
     )
     conn.commit()
     sync = conn.execute("SELECT * FROM source_syncs WHERE id = ?", (cursor.lastrowid,)).fetchone()
     return {"sync": _sync_dict(sync), "already_active": False}
+
+
+@router.post("/apple-photos/assets/known")
+def known_apple_photos_assets(request: KnownAssetsRequest, conn=Depends(get_conn)):
+    source = get_source(conn, "apple_photos")
+    placeholders = ", ".join("?" for _ in request.source_asset_ids)
+    rows = conn.execute(
+        f"""SELECT source_asset_id FROM assets
+        WHERE source_id = ? AND source_asset_id IN ({placeholders}) AND deleted = 0""",
+        (source["id"], *request.source_asset_ids),
+    ).fetchall()
+    return {"source_asset_ids": [row["source_asset_id"] for row in rows]}
 
 
 @router.get("/apple-photos/sync/status")

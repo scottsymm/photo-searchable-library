@@ -30,6 +30,10 @@ With the bridge watching, use the **Sync Apple Photos** button in Pics. The
 bridge claims the request, imports the bounded batch, and reports completion;
 the existing Pics worker processes each uploaded asset.
 
+The Photos page also provides a full sync. It scans the complete PhotoKit
+library in batches, checks already-imported `PHAsset.localIdentifier` values,
+and uploads only assets that are missing from Pics.
+
 Use a different API URL or limit:
 
 ```bash

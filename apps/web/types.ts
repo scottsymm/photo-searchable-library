@@ -91,6 +91,7 @@ export interface SourceSync {
   source_id: number;
   status: "queued" | "running" | "done" | "error";
   limit_count: number;
+  full_sync: number;
   requested_at: string;
   started_at: string | null;
   completed_at: string | null;

@@ -99,11 +99,11 @@ export async function applePhotosStatus(): Promise<SourceStatus> {
   return (await response.json()).source;
 }
 
-export async function requestApplePhotosSync(limit = 25): Promise<SourceSync> {
+export async function requestApplePhotosSync(limit = 25, full = false): Promise<SourceSync> {
   const response = await fetch(apiUrl("/sources/apple-photos/sync"), {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ limit }),
+    body: JSON.stringify({ limit, full }),
   });
   if (!response.ok) throw new Error("Apple Photos sync request failed");
   return (await response.json()).sync;

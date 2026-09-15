@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS source_syncs (
   source_id INTEGER NOT NULL REFERENCES sources(id),
   status TEXT NOT NULL DEFAULT 'queued',
   limit_count INTEGER NOT NULL DEFAULT 25,
+  full_sync INTEGER NOT NULL DEFAULT 0,
   requested_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   started_at TEXT,
   completed_at TEXT,
@@ -189,6 +190,11 @@ def migrate(conn: sqlite3.Connection) -> None:
     ):
         if existing_asset_columns and column not in existing_asset_columns:
             conn.execute(f"ALTER TABLE assets ADD COLUMN {column} {definition}")
+    existing_sync_columns = {
+        row["name"] for row in conn.execute("PRAGMA table_info(source_syncs)")
+    }
+    if existing_sync_columns and "full_sync" not in existing_sync_columns:
+        conn.execute("ALTER TABLE source_syncs ADD COLUMN full_sync INTEGER NOT NULL DEFAULT 0")
     conn.executescript(SCHEMA)
     conn.execute(
         "INSERT OR REPLACE INTO schema_meta(key, value) VALUES ('version', '3')"
