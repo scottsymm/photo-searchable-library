@@ -61,7 +61,7 @@
 - Modify: `packages/core/core/schema.py`
 - Test: `packages/core/tests/test_sources.py`
 
-- [ ] **Step 1: Add failing tests**
+- [x] **Step 1: Add failing tests**
 
 Create `packages/core/tests/test_sources.py`:
 
@@ -92,7 +92,7 @@ def test_assets_have_source_identity_columns():
     assert {"source_id", "source_asset_id", "original_filename"} <= columns
 ```
 
-- [ ] **Step 2: Verify tests fail**
+- [x] **Step 2: Verify tests fail**
 
 Run:
 
@@ -103,7 +103,7 @@ cd packages/core
 
 Expected: FAIL — `sources` table does not exist.
 
-- [ ] **Step 3: Add schema tables and columns**
+- [x] **Step 3: Add schema tables and columns**
 
 In `packages/core/core/schema.py`, add this table after `files`:
 
@@ -149,7 +149,7 @@ In `migrate`, after `seed(conn)`, add:
     )
 ```
 
-- [ ] **Step 4: Verify tests pass**
+- [x] **Step 4: Verify tests pass**
 
 Run:
 
@@ -160,7 +160,7 @@ cd packages/core
 
 Expected: PASS — 2 tests passing.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/core/core/schema.py packages/core/tests/test_sources.py
@@ -173,7 +173,7 @@ git commit -m "feat: add source identity schema"
 - Create: `packages/core/core/sources.py`
 - Test: `packages/core/tests/test_sources.py`
 
-- [ ] **Step 1: Add failing tests**
+- [x] **Step 1: Add failing tests**
 
 Append to `packages/core/tests/test_sources.py`:
 
@@ -220,7 +220,7 @@ def test_upsert_source_asset_is_idempotent():
     assert conn.execute("SELECT COUNT(*) FROM assets").fetchone()[0] == 1
 ```
 
-- [ ] **Step 2: Verify tests fail**
+- [x] **Step 2: Verify tests fail**
 
 Run:
 
@@ -231,7 +231,7 @@ cd packages/core
 
 Expected: FAIL — `core.sources` does not exist.
 
-- [ ] **Step 3: Implement source helpers**
+- [x] **Step 3: Implement source helpers**
 
 Create `packages/core/core/sources.py`:
 
@@ -309,7 +309,7 @@ def upsert_source_asset(
     return int(row["id"])
 ```
 
-- [ ] **Step 4: Verify tests pass**
+- [x] **Step 4: Verify tests pass**
 
 Run:
 
@@ -320,7 +320,7 @@ cd packages/core
 
 Expected: PASS — 4 tests passing.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/core/core/sources.py packages/core/tests/test_sources.py
@@ -334,7 +334,7 @@ git commit -m "feat: add source persistence helpers"
 - Modify: `apps/api/api/main.py`
 - Test: `apps/api/tests/test_sources.py`
 
-- [ ] **Step 1: Add failing API tests**
+- [x] **Step 1: Add failing API tests**
 
 Create `apps/api/tests/test_sources.py`:
 
@@ -374,7 +374,7 @@ def test_apple_photos_ingest_queues_import(client, tmp_path, monkeypatch):
     assert duplicate.json()["duplicate"] is True
 ```
 
-- [ ] **Step 2: Verify tests fail**
+- [x] **Step 2: Verify tests fail**
 
 Run:
 
@@ -385,7 +385,7 @@ cd apps/api
 
 Expected: FAIL — `/sources/apple-photos/status` is not found.
 
-- [ ] **Step 3: Implement source routes**
+- [x] **Step 3: Implement source routes**
 
 Create `apps/api/api/sources.py`:
 
@@ -515,7 +515,7 @@ Add after the places router:
 app.include_router(sources.router, prefix="/sources", tags=["sources"])
 ```
 
-- [ ] **Step 4: Verify tests pass**
+- [x] **Step 4: Verify tests pass**
 
 Run:
 
@@ -526,7 +526,7 @@ cd apps/api
 
 Expected: PASS — 2 tests passing.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/api/api/sources.py apps/api/api/main.py apps/api/tests/test_sources.py
@@ -540,7 +540,7 @@ git commit -m "feat: add Apple Photos ingest endpoint"
 - Create: `apps/photos-bridge/Sources/PicsPhotosBridge/main.swift`
 - Create: `apps/photos-bridge/README.md`
 
-- [ ] **Step 1: Create package manifest**
+- [x] **Step 1: Create package manifest**
 
 Create `apps/photos-bridge/Package.swift`:
 
@@ -557,7 +557,7 @@ let package = Package(
 )
 ```
 
-- [ ] **Step 2: Create bridge implementation**
+- [x] **Step 2: Create bridge implementation**
 
 Create `apps/photos-bridge/Sources/PicsPhotosBridge/main.swift`:
 
@@ -710,7 +710,7 @@ struct PicsPhotosBridge {
 }
 ```
 
-- [ ] **Step 3: Create bridge README**
+- [x] **Step 3: Create bridge README**
 
 Create `apps/photos-bridge/README.md`:
 
@@ -747,7 +747,7 @@ The first run asks macOS for Photos access. The bridge uses PhotoKit and does
 not read `Photos Library.photoslibrary` directly.
 ```
 
-- [ ] **Step 4: Verify bridge builds**
+- [x] **Step 4: Verify bridge builds**
 
 Run:
 
@@ -758,7 +758,7 @@ swift build
 
 Expected: PASS — `Build complete!`
 
-- [ ] **Step 5: Verify dry run**
+- [x] **Step 5: Verify dry run**
 
 Run:
 
@@ -769,7 +769,7 @@ cd apps/photos-bridge
 
 Expected: PASS — output includes `authorization=authorized`, `asset_count=`, and three `asset=` lines.
 
-- [ ] **Step 6: Add root convenience scripts**
+- [x] **Step 6: Add root convenience scripts**
 
 Modify the root `package.json` scripts block to include:
 
@@ -781,7 +781,7 @@ Modify the root `package.json` scripts block to include:
 
 These scripts are convenience wrappers only. SwiftPM remains the build system for the macOS bridge; Docker Compose and Turborepo do not build it in Phase 1.
 
-- [ ] **Step 7: Verify root scripts**
+- [x] **Step 7: Verify root scripts**
 
 Run:
 
@@ -792,7 +792,7 @@ pnpm bridge:dry-run
 
 Expected: PASS — the Swift package builds and the dry run prints authorization state, asset count, and asset IDs.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add apps/photos-bridge package.json
@@ -806,7 +806,7 @@ git commit -m "feat: add Apple Photos bridge prototype"
 - Modify: `apps/web/lib/api.ts`
 - Modify: `apps/web/app/photos/page.tsx`
 
-- [ ] **Step 1: Add source status type**
+- [x] **Step 1: Add source status type**
 
 In `apps/web/types.ts`, append:
 
@@ -824,7 +824,7 @@ export interface SourceStatus {
 }
 ```
 
-- [ ] **Step 2: Add API client**
+- [x] **Step 2: Add API client**
 
 In `apps/web/lib/api.ts`, add `SourceStatus` to the type import and append:
 
@@ -836,7 +836,7 @@ export async function applePhotosStatus(): Promise<SourceStatus> {
 }
 ```
 
-- [ ] **Step 3: Show source state on Photos page**
+- [x] **Step 3: Show source state on Photos page**
 
 In `apps/web/app/photos/page.tsx`, import:
 
@@ -868,7 +868,7 @@ After the first cards section, add:
 {source && <><h2>Apple Photos bridge</h2><div className="cards"><div className="card"><strong>{source.status}</strong><span className="muted">Authorization: {source.authorization_state ?? "not requested"}</span></div><div className="card"><strong>{source.imported_count.toLocaleString()} imported</strong><span className="muted">{source.asset_count.toLocaleString()} assets reported by the bridge.</span></div><div className="card"><strong>Last sync</strong><span className="muted">{source.last_sync_at ?? "Never"}</span></div></div></>}
 ```
 
-- [ ] **Step 4: Verify web checks**
+- [x] **Step 4: Verify web checks**
 
 Run:
 
@@ -880,7 +880,7 @@ pnpm build
 
 Expected: PASS — TypeScript check and production build succeed.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/types.ts apps/web/lib/api.ts apps/web/app/photos/page.tsx
@@ -892,7 +892,7 @@ git commit -m "feat: show Apple Photos bridge status"
 **Files:**
 - Modify: `README.md`
 
-- [ ] **Step 1: Add Apple Photos section**
+- [x] **Step 1: Add Apple Photos section**
 
 After the `## Index Photos` section in `README.md`, add:
 
@@ -926,7 +926,7 @@ video resources with stable Apple asset identifiers. Albums, Apple People,
 edits, deletion propagation, and background scheduling are deferred.
 ```
 
-- [ ] **Step 2: Verify documentation commands**
+- [x] **Step 2: Verify documentation commands**
 
 Run:
 
@@ -937,7 +937,7 @@ swift build
 
 Expected: PASS — `Build complete!`
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add README.md
@@ -949,7 +949,7 @@ git commit -m "docs: document Apple Photos bridge"
 **Files:**
 - None
 
-- [ ] **Step 1: Run Python tests**
+- [x] **Step 1: Run Python tests**
 
 Run:
 
@@ -961,7 +961,7 @@ cd ../../services/worker && .venv/bin/pytest -q
 
 Expected: PASS — all core, API, and worker tests pass.
 
-- [ ] **Step 2: Run web checks**
+- [x] **Step 2: Run web checks**
 
 Run:
 
@@ -973,7 +973,7 @@ pnpm build
 
 Expected: PASS — TypeScript and production build succeed.
 
-- [ ] **Step 3: Run bridge dry run**
+- [x] **Step 3: Run bridge dry run**
 
 Run:
 
@@ -984,7 +984,7 @@ cd apps/photos-bridge
 
 Expected: PASS — authorization is `authorized` or `limited`, and asset IDs are printed.
 
-- [ ] **Step 4: Run bounded live import**
+- [x] **Step 4: Run bounded live import**
 
 Run:
 
@@ -996,7 +996,7 @@ curl -sS http://localhost:8000/sources/apple-photos/status
 
 Expected: PASS — bridge uploads complete or report per-asset errors; status shows `connected` and an imported count.
 
-- [ ] **Step 5: Commit any remaining fixes**
+- [x] **Step 5: Commit any remaining fixes**
 
 ```bash
 git status --short
@@ -1008,11 +1008,11 @@ git commit -m "test: verify Apple Photos bridge phase 1"
 
 Final verification steps after all tasks complete:
 
-- [ ] Core tests pass: `cd packages/core && .venv/bin/pytest -q`
-- [ ] API tests pass: `cd apps/api && .venv/bin/pytest -q`
-- [ ] Worker tests pass: `cd services/worker && .venv/bin/pytest -q`
-- [ ] Web check passes: `cd apps/web && pnpm check`
-- [ ] Web build passes: `cd apps/web && pnpm build`
-- [ ] Bridge builds: `pnpm bridge:build`
-- [ ] Bridge dry run lists assets: `pnpm bridge:dry-run`
-- [ ] Bounded live import updates status: `pnpm bridge:sync && curl -sS http://localhost:8000/sources/apple-photos/status`
+- [x] Core tests pass: `cd packages/core && .venv/bin/pytest -q`
+- [x] API tests pass: `cd apps/api && .venv/bin/pytest -q`
+- [x] Worker tests pass: `cd services/worker && .venv/bin/pytest -q`
+- [x] Web check passes: `cd apps/web && pnpm check`
+- [x] Web build passes: `cd apps/web && pnpm build`
+- [x] Bridge builds: `pnpm bridge:build`
+- [x] Bridge dry run lists assets: `pnpm bridge:dry-run`
+- [x] Bounded live import updates status: `pnpm bridge:sync && curl -sS http://localhost:8000/sources/apple-photos/status`
