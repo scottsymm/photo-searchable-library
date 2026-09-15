@@ -1,0 +1,165 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 1520" font-family="-apple-system, Helvetica Neue, Arial, sans-serif">
+  <rect width="1240" height="1520" fill="#f7f3ec"/>
+
+  <!-- Header -->
+  <text x="80" y="62" font-size="12" letter-spacing="3" fill="#b3552f" font-weight="600">CATALOG OVERVIEW</text>
+  <text x="80" y="118" font-size="60" font-family="Georgia, serif" fill="#1a1a1a">Photos</text>
+  <text x="80" y="152" font-size="15" fill="#6b6560">The state of your catalog and its connections — where every asset is, and what needs attention.</text>
+
+  <!-- Funnel -->
+  <text x="80" y="206" font-size="12" letter-spacing="3" fill="#b3552f" font-weight="600">ASSET FUNNEL</text>
+
+  <!-- Stage 1: Discovered (flat left) -->
+  <polygon points="80,230 209,230 225,275 209,320 80,320" fill="#ffffff" stroke="#d5cec0"/>
+  <text x="148" y="256" font-size="10" letter-spacing="1.5" fill="#6b6560" text-anchor="middle">DISCOVERED</text>
+  <text x="148" y="292" font-size="26" font-weight="700" fill="#1a1a1a" text-anchor="middle">8,571</text>
+
+  <!-- Stage 2: Ready to import -->
+  <polygon points="235,230 364,230 380,275 364,320 235,320 251,275" fill="#ffffff" stroke="#d5cec0"/>
+  <text x="303" y="250" font-size="10" letter-spacing="1.5" fill="#6b6560" text-anchor="middle">READY TO</text>
+  <text x="303" y="262" font-size="10" letter-spacing="1.5" fill="#6b6560" text-anchor="middle">IMPORT</text>
+  <text x="303" y="294" font-size="26" font-weight="700" fill="#1a1a1a" text-anchor="middle">3,134</text>
+
+  <!-- Stage 3: Importing (approx, dashed) -->
+  <polygon points="390,230 519,230 535,275 519,320 390,320 406,275" fill="#ffffff" stroke="#8a857e" stroke-dasharray="5,4"/>
+  <text x="458" y="256" font-size="10" letter-spacing="1.5" fill="#6b6560" text-anchor="middle">IMPORTING</text>
+  <text x="458" y="292" font-size="26" font-weight="700" fill="#1a1a1a" text-anchor="middle">0</text>
+  <text x="458" y="310" font-size="9" font-style="italic" fill="#8a857e" text-anchor="middle">in-flight · approx</text>
+
+  <!-- Stage 4: Imported -->
+  <polygon points="545,230 674,230 690,275 674,320 545,320 561,275" fill="#ffffff" stroke="#d5cec0"/>
+  <text x="613" y="256" font-size="10" letter-spacing="1.5" fill="#6b6560" text-anchor="middle">IMPORTED</text>
+  <text x="613" y="292" font-size="26" font-weight="700" fill="#1a1a1a" text-anchor="middle">5,437</text>
+
+  <!-- Stage 5: Processing -->
+  <polygon points="700,230 829,230 845,275 829,320 700,320 716,275" fill="#ffffff" stroke="#d5cec0"/>
+  <text x="768" y="256" font-size="10" letter-spacing="1.5" fill="#6b6560" text-anchor="middle">PROCESSING</text>
+  <text x="768" y="292" font-size="26" font-weight="700" fill="#1a1a1a" text-anchor="middle">0</text>
+
+  <!-- Stage 6: Searchable -->
+  <polygon points="855,230 984,230 1000,275 984,320 855,320 871,275" fill="#eaf2ec" stroke="#2e7d4f"/>
+  <text x="923" y="256" font-size="10" letter-spacing="1.5" fill="#2e7d4f" text-anchor="middle">SEARCHABLE</text>
+  <text x="923" y="292" font-size="26" font-weight="700" fill="#1a1a1a" text-anchor="middle">5,434</text>
+
+  <!-- Stage 7: Failed/Blocked (approx, rust) -->
+  <polygon points="1010,230 1139,230 1155,275 1139,320 1010,320 1026,275" fill="#faf0ec" stroke="#b3552f"/>
+  <text x="1078" y="250" font-size="10" letter-spacing="1.5" fill="#b3552f" text-anchor="middle">FAILED /</text>
+  <text x="1078" y="262" font-size="10" letter-spacing="1.5" fill="#b3552f" text-anchor="middle">BLOCKED</text>
+  <text x="1078" y="294" font-size="26" font-weight="700" fill="#b3552f" text-anchor="middle">3</text>
+  <text x="1078" y="310" font-size="9" font-style="italic" fill="#b3552f" text-anchor="middle">approx</text>
+
+  <text x="80" y="344" font-size="12" font-style="italic" fill="#6b6560">Discovered counts are as of each source's last report. Click a stage to expand its per-source breakdown.</text>
+
+  <!-- Drill-down panel (Searchable expanded) -->
+  <rect x="80" y="362" width="1080" height="168" rx="8" fill="#ffffff" stroke="#d5cec0"/>
+  <text x="104" y="394" font-size="13" font-weight="700" fill="#1a1a1a">▾ Searchable — by source</text>
+
+  <text x="104" y="428" font-size="13" fill="#1a1a1a">Apple Photos</text>
+  <rect x="240" y="416" width="700" height="14" rx="3" fill="#b3552f"/>
+  <text x="950" y="428" font-size="13" font-weight="600" fill="#1a1a1a">4,968</text>
+
+  <text x="104" y="462" font-size="13" fill="#1a1a1a">Mounted folder</text>
+  <rect x="240" y="450" width="66" height="14" rx="3" fill="#8a857e"/>
+  <text x="316" y="462" font-size="13" font-weight="600" fill="#1a1a1a">466</text>
+
+  <text x="104" y="496" font-size="13" fill="#1a1a1a">Uploads</text>
+  <rect x="240" y="484" width="3" height="14" rx="1" fill="#c8c2b8"/>
+  <text x="253" y="496" font-size="13" font-weight="600" fill="#1a1a1a">0</text>
+
+  <!-- Source connections -->
+  <text x="80" y="586" font-size="12" letter-spacing="3" fill="#b3552f" font-weight="600">SOURCE CONNECTIONS</text>
+
+  <!-- Card: Apple Photos -->
+  <rect x="80" y="612" width="346" height="248" rx="10" fill="#ffffff" stroke="#d5cec0"/>
+  <text x="102" y="648" font-size="17" font-weight="700" fill="#1a1a1a">Apple Photos</text>
+  <rect x="316" y="628" width="88" height="22" rx="11" fill="#2e7d4f"/>
+  <text x="360" y="643" font-size="11" font-weight="600" fill="#ffffff" text-anchor="middle">connected</text>
+  <text x="102" y="680" font-size="13" fill="#1a1a1a">8,105 discovered · 4,968 searchable</text>
+  <text x="102" y="702" font-size="12" font-style="italic" fill="#6b6560">as of last sync 2:59 PM</text>
+  <text x="102" y="728" font-size="12" fill="#b3552f">Last sync failed: bridge lease expired</text>
+  <rect x="102" y="746" width="128" height="36" rx="18" fill="#1a1a1a"/>
+  <text x="166" y="769" font-size="13" font-weight="600" fill="#ffffff" text-anchor="middle">Sync latest 25</text>
+  <rect x="242" y="746" width="96" height="36" rx="18" fill="#ffffff" stroke="#1a1a1a"/>
+  <text x="290" y="769" font-size="13" font-weight="600" fill="#1a1a1a" text-anchor="middle">Full sync</text>
+  <text x="102" y="812" font-size="11" fill="#6b6560">Requires the local bridge in watch mode</text>
+
+  <!-- Card: Mounted folder -->
+  <rect x="447" y="612" width="346" height="248" rx="10" fill="#ffffff" stroke="#d5cec0"/>
+  <text x="469" y="648" font-size="17" font-weight="700" fill="#1a1a1a">Mounted folder</text>
+  <rect x="683" y="628" width="88" height="22" rx="11" fill="#2e7d4f"/>
+  <text x="727" y="643" font-size="11" font-weight="600" fill="#ffffff" text-anchor="middle">connected</text>
+  <text x="469" y="680" font-size="13" fill="#1a1a1a">466 discovered · 466 searchable</text>
+  <text x="469" y="702" font-size="12" font-style="italic" fill="#6b6560">scanned 1 min ago</text>
+  <text x="469" y="728" font-size="12" fill="#6b6560">/media/photos</text>
+  <text x="469" y="812" font-size="11" fill="#6b6560">Read-only in v1</text>
+
+  <!-- Card: Uploads -->
+  <rect x="814" y="612" width="346" height="248" rx="10" fill="#ffffff" stroke="#d5cec0"/>
+  <text x="836" y="648" font-size="17" font-weight="700" fill="#1a1a1a">Uploads</text>
+  <rect x="1050" y="628" width="88" height="22" rx="11" fill="#2e7d4f"/>
+  <text x="1094" y="643" font-size="11" font-weight="600" fill="#ffffff" text-anchor="middle">connected</text>
+  <text x="836" y="680" font-size="13" fill="#1a1a1a">0 assets</text>
+  <text x="836" y="702" font-size="12" font-style="italic" fill="#6b6560">live</text>
+  <text x="836" y="812" font-size="11" fill="#6b6560">Read-only in v1</text>
+
+  <!-- Recent imports -->
+  <text x="80" y="916" font-size="12" letter-spacing="3" fill="#b3552f" font-weight="600">RECENT IMPORTS</text>
+
+  <g>
+    <rect x="80" y="942" width="150" height="150" rx="8" fill="#e8e2d6" stroke="#d5cec0"/>
+    <circle cx="120" cy="985" r="12" fill="#c8c2b8"/>
+    <polygon points="95,1070 145,1015 185,1058 205,1038 215,1070" fill="#c8c2b8"/>
+    <text x="80" y="1114" font-size="11" fill="#6b6560">Apple Photos</text>
+  </g>
+  <g>
+    <rect x="244" y="942" width="150" height="150" rx="8" fill="#e8e2d6" stroke="#d5cec0"/>
+    <circle cx="284" cy="985" r="12" fill="#c8c2b8"/>
+    <polygon points="259,1070 309,1015 349,1058 369,1038 379,1070" fill="#c8c2b8"/>
+    <text x="244" y="1114" font-size="11" fill="#6b6560">Apple Photos</text>
+  </g>
+  <g>
+    <rect x="408" y="942" width="150" height="150" rx="8" fill="#e8e2d6" stroke="#d5cec0"/>
+    <circle cx="448" cy="985" r="12" fill="#c8c2b8"/>
+    <polygon points="423,1070 473,1015 513,1058 533,1038 543,1070" fill="#c8c2b8"/>
+    <text x="408" y="1114" font-size="11" fill="#6b6560">Apple Photos</text>
+  </g>
+  <g>
+    <rect x="572" y="942" width="150" height="150" rx="8" fill="#e8e2d6" stroke="#d5cec0"/>
+    <circle cx="612" cy="985" r="12" fill="#c8c2b8"/>
+    <polygon points="587,1070 637,1015 677,1058 697,1038 707,1070" fill="#c8c2b8"/>
+    <text x="572" y="1114" font-size="11" fill="#6b6560">Uploads</text>
+  </g>
+  <g>
+    <rect x="736" y="942" width="150" height="150" rx="8" fill="#e8e2d6" stroke="#d5cec0"/>
+    <circle cx="776" cy="985" r="12" fill="#c8c2b8"/>
+    <polygon points="751,1070 801,1015 841,1058 861,1038 871,1070" fill="#c8c2b8"/>
+    <text x="736" y="1114" font-size="11" fill="#6b6560">Mounted folder</text>
+  </g>
+  <g>
+    <rect x="900" y="942" width="150" height="150" rx="8" fill="#e8e2d6" stroke="#d5cec0"/>
+    <circle cx="940" cy="985" r="12" fill="#c8c2b8"/>
+    <polygon points="915,1070 965,1015 1005,1058 1025,1038 1035,1070" fill="#c8c2b8"/>
+    <text x="900" y="1114" font-size="11" fill="#6b6560">Apple Photos</text>
+  </g>
+
+  <!-- Catalog context -->
+  <text x="80" y="1188" font-size="12" letter-spacing="3" fill="#b3552f" font-weight="600">CATALOG CONTEXT</text>
+
+  <rect x="80" y="1214" width="530" height="190" rx="10" fill="#ffffff" stroke="#d5cec0"/>
+  <text x="104" y="1250" font-size="17" font-weight="700" fill="#1a1a1a">Faces &amp; people</text>
+  <text x="104" y="1290" font-size="24" font-weight="700" fill="#1a1a1a">3,708 faces</text>
+  <text x="104" y="1318" font-size="13" fill="#6b6560">1,200 assigned to people · 2,508 unassigned</text>
+  <rect x="104" y="1340" width="159" height="12" rx="6" fill="#2e7d4f"/>
+  <rect x="263" y="1340" width="331" height="12" rx="6" fill="#e0dacd"/>
+  <text x="104" y="1376" font-size="11" fill="#6b6560">Unassigned faces are the actionable gap</text>
+
+  <rect x="630" y="1214" width="530" height="190" rx="10" fill="#ffffff" stroke="#d5cec0"/>
+  <text x="654" y="1250" font-size="17" font-weight="700" fill="#1a1a1a">Places</text>
+  <text x="654" y="1290" font-size="24" font-weight="700" fill="#1a1a1a">4,000 located</text>
+  <text x="654" y="1318" font-size="13" fill="#6b6560">1,437 assets without location data</text>
+  <rect x="654" y="1340" width="360" height="12" rx="6" fill="#4f6b8a"/>
+  <rect x="1014" y="1340" width="130" height="12" rx="6" fill="#e0dacd"/>
+
+  <!-- Footer -->
+  <text x="620" y="1470" font-size="12" font-style="italic" fill="#6b6560" text-anchor="middle">State variants (empty, authorization required, inventory pending, failed) render per the state matrix — design doc §4. Numbers never show as misleading zeros.</text>
+</svg>
