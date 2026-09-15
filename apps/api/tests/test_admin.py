@@ -1,3 +1,13 @@
+import pytest
+
+import api.admin
+
+
+@pytest.fixture(autouse=True)
+def _clear_inventory_cache():
+    api.admin._clear_inventory_cache()
+
+
 def test_admin_settings_defaults(client):
     response = client.get("/admin/settings")
     assert response.status_code == 200
@@ -47,3 +57,45 @@ def test_library_inventory_reports_supported_files(tmp_path, client, monkeypatch
     assert data["extensions"] == {".heic": 1, ".jpg": 1}
     assert data["photos_libraries"][0]["name"] == "Photos Library.photoslibrary"
     assert data["catalog"] == {"assets": 0, "mounted_assets": 0, "faces": 0}
+
+
+def test_library_inventory_reuses_cached_scan(client, monkeypatch):
+    original = api.admin._library_inventory
+    calls = []
+
+    def tracking():
+        calls.append(1)
+        return original()
+
+    monkeypatch.setattr(api.admin, "_library_inventory", tracking)
+
+    r1 = client.get("/admin/library")
+    assert r1.status_code == 200
+    r2 = client.get("/admin/library")
+    assert r2.status_code == 200
+
+    assert len(calls) == 1
+    assert r1.json() == r2.json()
+
+
+def test_library_inventory_cache_resets_when_root_changes(client, monkeypatch, tmp_path_factory):
+    root1 = tmp_path_factory.mktemp("root1")
+    root2 = tmp_path_factory.mktemp("root2")
+    original = api.admin._library_inventory
+    calls = []
+
+    def tracking():
+        calls.append(1)
+        return original()
+
+    monkeypatch.setattr(api.admin, "_library_inventory", tracking)
+
+    monkeypatch.setattr(api.admin, "WATCH_ROOT", root1)
+    r1 = client.get("/admin/library")
+    assert r1.status_code == 200
+
+    monkeypatch.setattr(api.admin, "WATCH_ROOT", root2)
+    r2 = client.get("/admin/library")
+    assert r2.status_code == 200
+
+    assert len(calls) == 2

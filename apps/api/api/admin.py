@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import os
 import shutil
+import threading
+import time
 from collections import Counter
 from pathlib import Path
 
@@ -19,6 +21,11 @@ from .deps import WORKER_URL, get_conn
 router = APIRouter()
 WATCH_ROOT = Path(os.environ.get("PICS_WATCH_ROOT", "/media/photos"))
 MEDIA_SUFFIXES = {".jpg", ".jpeg", ".png", ".heic", ".heif", ".mov", ".mp4", ".avif", ".dng"}
+_INVENTORY_CACHE_TTL = float(os.environ.get("PICS_INVENTORY_CACHE_TTL", "60"))
+_inventory_lock = threading.Lock()
+_inventory_cache: dict | None = None
+_inventory_cached_at: float | None = None
+_inventory_cache_root: Path | None = None
 
 
 class SettingsUpdate(BaseModel):
@@ -28,6 +35,15 @@ class SettingsUpdate(BaseModel):
 
 class ScanRequest(BaseModel):
     root: str | None = None
+
+
+def _clear_inventory_cache() -> None:
+    """Drop the cached library inventory. Intended for tests."""
+    global _inventory_cache, _inventory_cached_at, _inventory_cache_root
+    with _inventory_lock:
+        _inventory_cache = None
+        _inventory_cached_at = None
+        _inventory_cache_root = None
 
 
 def _models_ready() -> bool:
@@ -78,6 +94,62 @@ def _library_inventory() -> dict:
     }
 
 
+def _cached_library_inventory() -> dict:
+    """Return the library inventory, scanning only when the cache has expired.
+
+    Scans are serialized: only one walk runs at a time. If another request is
+    already scanning, callers immediately receive the last cached result so
+    the thread pool is not consumed by waiting threads.
+    """
+    global _inventory_cache, _inventory_cached_at, _inventory_cache_root
+
+    now = time.monotonic()
+    root = WATCH_ROOT
+    cached = _inventory_cache
+    cached_at = _inventory_cached_at
+    cached_root = _inventory_cache_root
+
+    if (
+        cached is not None
+        and cached_at is not None
+        and cached_root is not None
+        and str(cached_root) == str(root)
+        and now - cached_at <= _INVENTORY_CACHE_TTL
+    ):
+        return cached
+
+    if _inventory_lock.acquire(blocking=False):
+        try:
+            now = time.monotonic()
+            if (
+                _inventory_cache is not None
+                and _inventory_cache_root is not None
+                and str(_inventory_cache_root) == str(root)
+                and now - _inventory_cached_at <= _INVENTORY_CACHE_TTL
+            ):
+                return _inventory_cache
+            _inventory_cache = _library_inventory()
+            _inventory_cached_at = time.monotonic()
+            _inventory_cache_root = root
+            return _inventory_cache
+        finally:
+            _inventory_lock.release()
+
+    # Another request is scanning; return stale data if any is available.
+    if cached is not None:
+        return cached
+
+    # No stale data to return; wait for the scan that is already running and
+    # recompute under the lock if it still was not populated.
+    with _inventory_lock:
+        if _inventory_cache is not None and str(_inventory_cache_root) == str(root):
+            return _inventory_cache
+        _inventory_cache = _library_inventory()
+        _inventory_cached_at = time.monotonic()
+        _inventory_cache_root = root
+        return _inventory_cache
+
+
 @router.get("/status")
 def status(conn=Depends(get_conn)):
     root_available = WATCH_ROOT.is_dir()
@@ -110,7 +182,7 @@ def read_settings(conn=Depends(get_conn)):
 
 @router.get("/library")
 def library_inventory(conn=Depends(get_conn)):
-    inventory = _library_inventory()
+    inventory = _cached_library_inventory().copy()
     root = str(WATCH_ROOT.resolve())
     prefix = f"{root}{os.sep}%"
     inventory["catalog"] = {
