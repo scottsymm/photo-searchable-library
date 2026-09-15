@@ -174,7 +174,7 @@ def _context(conn: sqlite3.Connection, inventory: dict) -> dict:
           a.created_at AS imported_at, a.taken_at
         FROM assets a LEFT JOIN sources s ON s.id = a.source_id
         WHERE a.deleted = 0
-        ORDER BY a.created_at IS NULL, a.created_at DESC, a.taken_at DESC LIMIT 6"""
+        ORDER BY a.thumbnail_id IS NULL, a.created_at IS NULL, a.created_at DESC, a.taken_at DESC LIMIT 6"""
     ).fetchall()
     faces_total = conn.execute("SELECT COUNT(*) FROM faces").fetchone()[0]
     assigned = conn.execute("SELECT COUNT(DISTINCT face_id) FROM person_faces").fetchone()[0]
