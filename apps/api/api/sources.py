@@ -204,8 +204,8 @@ async def ingest_apple_photos_asset(
 
     conn.execute(
         """INSERT INTO assets(
-          source_id, source_asset_id, original_filename, path, sha256, size_bytes, mime, taken_at, extra
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          source_id, source_asset_id, original_filename, path, sha256, size_bytes, mime, taken_at, extra, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(source_id, source_asset_id) DO UPDATE SET
           original_filename = excluded.original_filename,
           path = excluded.path,
@@ -220,6 +220,7 @@ async def ingest_apple_photos_asset(
             file.content_type or "application/octet-stream",
             taken_at,
             "{}",
+            datetime.now(timezone.utc).isoformat(),
         ),
     )
     asset_id = conn.execute(

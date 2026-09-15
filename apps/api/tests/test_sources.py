@@ -64,3 +64,22 @@ def test_failed_source_import_is_requeued(client, tmp_path, monkeypatch):
 
     status = client.get("/sources/apple-photos/status")
     assert status.json()["source"]["imported_count"] == 0
+
+
+def test_apple_photos_ingest_sets_created_at(client, tmp_path, monkeypatch):
+    monkeypatch.setattr("api.sources.LIBRARY", tmp_path)
+    response = client.post(
+        "/sources/apple-photos/assets",
+        files={"file": ("IMG_0003.JPG", b"jpeg-bytes", "image/jpeg")},
+        data={"source_asset_id": "ABC/L0/003", "original_filename": "IMG_0003.JPG"},
+    )
+    assert response.status_code == 200
+
+    from api.deps import DB_PATH
+
+    conn = connect(DB_PATH)
+    row = conn.execute(
+        "SELECT created_at FROM assets WHERE source_asset_id = 'ABC/L0/003'"
+    ).fetchone()
+    conn.close()
+    assert row["created_at"] is not None
