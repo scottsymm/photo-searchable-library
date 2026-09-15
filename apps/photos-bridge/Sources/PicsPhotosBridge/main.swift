@@ -27,6 +27,12 @@ struct KnownAssetsResponse: Codable {
     let source_asset_ids: [String]
 }
 
+struct SyncResult {
+    let importedCount: Int
+    let failedCount: Int
+    let errors: [String]
+}
+
 func parseOptions() -> BridgeOptions {
     var options = BridgeOptions()
     var arguments = CommandLine.arguments.dropFirst()
@@ -80,8 +86,8 @@ func claimSync(options: BridgeOptions) async throws -> SyncRequest? {
     return try JSONDecoder().decode(SyncResponse.self, from: data).sync
 }
 
-func completeSync(_ sync: SyncRequest, importedCount: Int, error: String? = nil, options: BridgeOptions) async throws {
-    var fields = "imported_count=\(importedCount)"
+func completeSync(_ sync: SyncRequest, result: SyncResult, error: String? = nil, options: BridgeOptions) async throws {
+    var fields = "imported_count=\(result.importedCount)&failed_count=\(result.failedCount)"
     if let error {
         fields += "&error=\(error.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? error)"
     }
@@ -166,7 +172,7 @@ func upload(asset: PHAsset, resource: PHAssetResource, fileURL: URL, assetCount:
     }
 }
 
-func syncAssets(options: BridgeOptions, limit: Int, fullSync: Bool = false) async throws -> Int {
+func syncAssets(options: BridgeOptions, limit: Int, fullSync: Bool = false) async throws -> SyncResult {
     let fetchOptions = PHFetchOptions()
     fetchOptions.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
     let assets = PHAsset.fetchAssets(with: fetchOptions)
@@ -189,10 +195,14 @@ func syncAssets(options: BridgeOptions, limit: Int, fullSync: Bool = false) asyn
     let temporaryDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     try? FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
     var importedCount = 0
+    var failedCount = 0
+    var errors: [String] = []
 
     for asset in assetsToImport {
         guard let resource = primaryResource(for: asset) else {
             print("skip=\(asset.localIdentifier) reason=no-resource")
+            failedCount += 1
+            errors.append("\(asset.localIdentifier): no primary resource")
             continue
         }
         print("asset=\(asset.localIdentifier) file=\(resource.originalFilename)")
@@ -205,9 +215,11 @@ func syncAssets(options: BridgeOptions, limit: Int, fullSync: Bool = false) asyn
             print("uploaded=\(asset.localIdentifier)")
         } catch {
             print("error=\(asset.localIdentifier) \(error.localizedDescription)")
+            failedCount += 1
+            errors.append("\(asset.localIdentifier): \(error.localizedDescription)")
         }
     }
-    return importedCount
+    return SyncResult(importedCount: importedCount, failedCount: failedCount, errors: errors)
 }
 
 @main
@@ -226,9 +238,16 @@ struct PicsPhotosBridge {
                 do {
                     if let sync = try await claimSync(options: options) {
                         print("sync_started=\(sync.id) limit=\(sync.limit_count)")
-                        let importedCount = try await syncAssets(options: options, limit: sync.limit_count, fullSync: sync.full_sync == 1)
-                        try await completeSync(sync, importedCount: importedCount, options: options)
-                        print("sync_completed=\(sync.id) imported=\(importedCount)")
+                        do {
+                            let result = try await syncAssets(options: options, limit: sync.limit_count, fullSync: sync.full_sync == 1)
+                            let error = result.failedCount > 0 ? result.errors.prefix(10).joined(separator: "; ") : nil
+                            try await completeSync(sync, result: result, error: error, options: options)
+                            print("sync_completed=\(sync.id) imported=\(result.importedCount) failed=\(result.failedCount)")
+                        } catch {
+                            let result = SyncResult(importedCount: 0, failedCount: 1, errors: [error.localizedDescription])
+                            try? await completeSync(sync, result: result, error: error.localizedDescription, options: options)
+                            print("sync_error=\(sync.id) \(error.localizedDescription)")
+                        }
                     }
                 } catch {
                     print("sync_error=\(error.localizedDescription)")
@@ -236,6 +255,15 @@ struct PicsPhotosBridge {
                 try? await Task.sleep(for: .seconds(options.pollInterval))
             }
         }
-        _ = try? await syncAssets(options: options, limit: options.limit)
+        do {
+            let result = try await syncAssets(options: options, limit: options.limit)
+            if result.failedCount > 0 {
+                print("sync_failed imported=\(result.importedCount) failed=\(result.failedCount)")
+                exit(1)
+            }
+        } catch {
+            print("sync_error=\(error.localizedDescription)")
+            exit(1)
+        }
     }
 }

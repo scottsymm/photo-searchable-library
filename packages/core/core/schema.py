@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS source_syncs (
   started_at TEXT,
   completed_at TEXT,
   imported_count INTEGER NOT NULL DEFAULT 0,
+  failed_count INTEGER NOT NULL DEFAULT 0,
   error TEXT
 );
 
@@ -195,6 +196,8 @@ def migrate(conn: sqlite3.Connection) -> None:
     }
     if existing_sync_columns and "full_sync" not in existing_sync_columns:
         conn.execute("ALTER TABLE source_syncs ADD COLUMN full_sync INTEGER NOT NULL DEFAULT 0")
+    if existing_sync_columns and "failed_count" not in existing_sync_columns:
+        conn.execute("ALTER TABLE source_syncs ADD COLUMN failed_count INTEGER NOT NULL DEFAULT 0")
     conn.executescript(SCHEMA)
     conn.execute(
         "INSERT OR REPLACE INTO schema_meta(key, value) VALUES ('version', '3')"

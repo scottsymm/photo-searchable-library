@@ -106,13 +106,13 @@ def claim_apple_photos_sync(conn=Depends(get_conn)):
 
 
 @router.post("/apple-photos/sync/{sync_id}/complete")
-def complete_apple_photos_sync(sync_id: int, imported_count: int = Form(0), error: str | None = Form(None), conn=Depends(get_conn)):
-    status = "error" if error else "done"
+def complete_apple_photos_sync(sync_id: int, imported_count: int = Form(0), failed_count: int = Form(0), error: str | None = Form(None), conn=Depends(get_conn)):
+    status = "partial" if error and imported_count else "error" if error else "done"
     now = datetime.now(timezone.utc).isoformat()
     conn.execute(
-        """UPDATE source_syncs SET status = ?, completed_at = ?, imported_count = ?, error = ?
+        """UPDATE source_syncs SET status = ?, completed_at = ?, imported_count = ?, failed_count = ?, error = ?
         WHERE id = ?""",
-        (status, now, imported_count, error, sync_id),
+        (status, now, imported_count, failed_count, error, sync_id),
     )
     conn.commit()
     sync = conn.execute("SELECT * FROM source_syncs WHERE id = ?", (sync_id,)).fetchone()

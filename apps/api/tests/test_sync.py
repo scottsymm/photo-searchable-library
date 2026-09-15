@@ -17,6 +17,18 @@ def test_apple_photos_sync_request_can_be_claimed_and_completed(client):
     assert completed.json()["sync"]["imported_count"] == 3
 
 
+def test_partial_apple_photos_sync_is_not_reported_as_done(client):
+    requested = client.post("/sources/apple-photos/sync", json={"limit": 3})
+    sync_id = requested.json()["sync"]["id"]
+    client.post("/sources/apple-photos/sync/claim")
+    completed = client.post(
+        f"/sources/apple-photos/sync/{sync_id}/complete",
+        data={"imported_count": "2", "failed_count": "1", "error": "one asset failed"},
+    )
+    assert completed.json()["sync"]["status"] == "partial"
+    assert completed.json()["sync"]["failed_count"] == 1
+
+
 def test_apple_photos_sync_does_not_queue_two_active_requests(client):
     first = client.post("/sources/apple-photos/sync", json={"limit": 2})
     second = client.post("/sources/apple-photos/sync", json={"limit": 4})

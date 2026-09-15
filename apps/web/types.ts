@@ -89,12 +89,13 @@ export interface SourceStatus {
 export interface SourceSync {
   id: number;
   source_id: number;
-  status: "queued" | "running" | "done" | "error";
+  status: "queued" | "running" | "done" | "partial" | "error";
   limit_count: number;
   full_sync: number;
   requested_at: string;
   started_at: string | null;
   completed_at: string | null;
   imported_count: number;
+  failed_count: number;
   error: string | null;
 }
