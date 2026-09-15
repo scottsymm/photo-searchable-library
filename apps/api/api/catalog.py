@@ -12,6 +12,7 @@ from core.sources import classify_path
 
 from .admin import cached_library_inventory, inventory_scanned_at
 from .deps import get_conn
+from .sources import _source_with_bridge_status
 
 router = APIRouter()
 
@@ -117,6 +118,9 @@ def _apple_entry(conn, source, latest_sync, active):
         "kind": "apple_photos", "display_name": source["display_name"],
         "readiness": readiness, "readiness_detail": detail,
         "reported_at": source["last_sync_at"], "stages": stages,
+        "bridge_status": source["bridge_status"],
+        "bridge_last_seen_at": source["bridge_last_seen_at"],
+        "authorization_state": source["authorization_state"],
         "sync": dict(latest_sync) if latest_sync is not None else None,
         "actions": {"can_sync": True},
     }
@@ -184,8 +188,9 @@ def catalog_overview(conn=Depends(get_conn)):
     active = _job_paths(conn, ("queued", "working"))
     failed_jobs = _failed_job_counts(conn)
     rows = {row["kind"]: row for row in conn.execute("SELECT * FROM sources")}
+    apple_source = _source_with_bridge_status(rows["apple_photos"])
     entries = [
-        _apple_entry(conn, rows["apple_photos"], _latest_sync(conn, rows["apple_photos"]["id"]), active),
+        _apple_entry(conn, apple_source, _latest_sync(conn, apple_source["id"]), active),
         _mounted_entry(conn, rows["mounted_folder"], inventory, active, failed_jobs),
         _uploads_entry(conn, rows["uploads"], active, failed_jobs),
     ]

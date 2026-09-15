@@ -179,6 +179,26 @@ def test_context_reports_detected_photos_libraries(client, tmp_path, monkeypatch
     }]
 
 
+def test_apple_entry_exposes_bridge_state(client):
+    from datetime import datetime, timezone
+
+    generator, conn = _db(client)
+    try:
+        conn.execute(
+            """UPDATE sources SET bridge_status = 'connected', bridge_last_seen_at = ?,
+            authorization_state = 'authorized', asset_count = 8105 WHERE kind = 'apple_photos'""",
+            (datetime.now(timezone.utc).isoformat(),),
+        )
+        conn.commit()
+    finally:
+        generator.close()
+
+    apple = _source(_get(client), "apple_photos")
+    assert apple["bridge_status"] == "connected"
+    assert apple["bridge_last_seen_at"] is not None
+    assert apple["authorization_state"] == "authorized"
+
+
 def test_apple_reported_at_uses_last_sync_timestamp(client):
     generator, conn = _db(client)
     try:
