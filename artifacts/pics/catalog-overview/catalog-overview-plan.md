@@ -48,7 +48,7 @@
 - Modify: `packages/core/core/sources.py`
 - Test: `packages/core/tests/test_sources.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `packages/core/tests/test_sources.py`:
 
@@ -70,12 +70,12 @@ def test_classify_path_maps_library_and_watch_root(tmp_path, monkeypatch):
     assert classify_path(str(tmp_path / "elsewhere.jpg")) is None
 ```
 
-- [ ] **Step 2: Verify it fails**
+- [x] **Step 2: Verify it fails**
 
 Run: `uv run --frozen --package pics-core --extra dev pytest tests/test_sources.py -x` (workdir `packages/core`)
 Expected: FAIL — `ImportError`/`AttributeError` for `classify_path` (and `core.sources.LIBRARY` does not exist for monkeypatch).
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `packages/core/core/sources.py`, replace the module docstring/import block:
 
@@ -107,12 +107,12 @@ def classify_path(path: str) -> str | None:
 
 Keep all existing functions below unchanged.
 
-- [ ] **Step 4: Verify green**
+- [x] **Step 4: Verify green**
 
 Run: `uv run --frozen --package pics-core --extra dev pytest tests/test_sources.py -x` (workdir `packages/core`)
 Expected: PASS — 5 tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/core/core/sources.py packages/core/tests/test_sources.py
@@ -125,7 +125,7 @@ git commit -m "feat: add source path classification to core"
 - Modify: `packages/core/core/schema.py`
 - Test: `packages/core/tests/test_schema.py` (create)
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `packages/core/tests/test_schema.py`:
 
@@ -189,12 +189,12 @@ def test_migrate_backfills_source_ids(tmp_path, monkeypatch):
     assert rows[paths["other"]] is None
 ```
 
-- [ ] **Step 2: Verify they fail**
+- [x] **Step 2: Verify they fail**
 
 Run: `uv run --frozen --package pics-core --extra dev pytest tests/test_schema.py -x` (workdir `packages/core`)
 Expected: FAIL — `test_migrate_seeds_all_sources` assertion (missing kinds) and `created_at` missing.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `packages/core/core/schema.py`:
 
@@ -260,12 +260,12 @@ def _backfill_source_ids(conn: sqlite3.Connection) -> None:
     _backfill_source_ids(conn)
 ```
 
-- [ ] **Step 4: Verify green**
+- [x] **Step 4: Verify green**
 
 Run: `uv run --frozen --package pics-core --extra dev pytest tests -x` (workdir `packages/core`)
 Expected: PASS — all core tests (existing + 3 new).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/core/core/schema.py packages/core/tests/test_schema.py
@@ -278,7 +278,7 @@ git commit -m "feat: seed folder/upload sources and backfill asset source ids"
 - Modify: `packages/core/core/assets.py`
 - Test: `packages/core/tests/test_core.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `packages/core/tests/test_core.py`:
 
@@ -326,12 +326,12 @@ def test_upsert_asset_assigns_source_and_created_at(tmp_path, monkeypatch):
     assert again["created_at"] == row["created_at"]
 ```
 
-- [ ] **Step 2: Verify it fails**
+- [x] **Step 2: Verify it fails**
 
 Run: `uv run --frozen --package pics-core --extra dev pytest tests/test_core.py -x` (workdir `packages/core`)
 Expected: FAIL — `source_id` is NULL (and `created_at` NULL on the in-memory DB created before Task 2's column existed — note: `db()` runs `migrate`, so the column exists; the failure is the NULL values).
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `packages/core/core/assets.py`, add the import after the existing imports:
 
@@ -383,12 +383,12 @@ Replace the body of `upsert_asset` (from `thumbnail_id = None` through the final
 
 Keep the trailing `conn.commit()`, row fetch, and return unchanged. Note: `created_at` is intentionally absent from the `ON CONFLICT` update so re-imports preserve the original import time.
 
-- [ ] **Step 4: Verify green**
+- [x] **Step 4: Verify green**
 
 Run: `uv run --frozen --package pics-core --extra dev pytest tests -x` (workdir `packages/core`)
 Expected: PASS — all core tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/core/core/assets.py packages/core/tests/test_core.py
@@ -402,7 +402,7 @@ git commit -m "feat: assign source id and import timestamp on asset upsert"
 
 No worker code changes: `import_one` calls `upsert_asset`, which now classifies.
 
-- [ ] **Step 1: Write the test**
+- [x] **Step 1: Write the test**
 
 Append to `services/worker/tests/test_worker.py`:
 
@@ -429,12 +429,12 @@ def test_import_assigns_mounted_source(tmp_path, monkeypatch):
     assert conn.execute("SELECT source_id FROM assets WHERE id = ?", (asset_id,)).fetchone()[0] == mounted_id
 ```
 
-- [ ] **Step 2: Verify green (behavior landed in Task 3)**
+- [x] **Step 2: Verify green (behavior landed in Task 3)**
 
 Run: `uv run --frozen --package pics-worker --extra dev pytest tests -x` (workdir `services/worker`)
 Expected: PASS — 2 tests.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add services/worker/tests/test_worker.py
@@ -447,7 +447,7 @@ git commit -m "test: verify worker import assigns mounted source id"
 - Modify: `apps/api/api/sources.py`
 - Test: `apps/api/tests/test_sources.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `apps/api/tests/test_sources.py`:
 
@@ -471,12 +471,12 @@ def test_apple_photos_ingest_sets_created_at(client, tmp_path, monkeypatch):
     assert row["created_at"] is not None
 ```
 
-- [ ] **Step 2: Verify it fails**
+- [x] **Step 2: Verify it fails**
 
 Run: `uv run --frozen --package pics-api --extra dev pytest tests/test_sources.py -x` (workdir `apps/api`)
 Expected: FAIL — `created_at` is NULL.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `apps/api/api/sources.py`, in `ingest_apple_photos_asset`, replace the INSERT statement and its parameters:
 
@@ -506,12 +506,12 @@ In `apps/api/api/sources.py`, in `ingest_apple_photos_asset`, replace the INSERT
 
 (`datetime`/`timezone` are already imported in this module.)
 
-- [ ] **Step 4: Verify green**
+- [x] **Step 4: Verify green**
 
 Run: `uv run --frozen --package pics-api --extra dev pytest tests/test_sources.py -x` (workdir `apps/api`)
 Expected: PASS — 4 tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/api/api/sources.py apps/api/tests/test_sources.py
@@ -524,7 +524,7 @@ git commit -m "feat: timestamp apple photos ingested assets"
 - Modify: `apps/api/api/admin.py`
 - Test: `apps/api/tests/test_admin.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `apps/api/tests/test_admin.py`:
 
@@ -536,12 +536,12 @@ def test_inventory_scanned_at_tracks_last_scan(client):
     assert api.admin.inventory_scanned_at() is not None
 ```
 
-- [ ] **Step 2: Verify it fails**
+- [x] **Step 2: Verify it fails**
 
 Run: `uv run --frozen --package pics-api --extra dev pytest tests/test_admin.py -x` (workdir `apps/api`)
 Expected: FAIL — `AttributeError: module 'api.admin' has no attribute 'inventory_scanned_at'`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `apps/api/api/admin.py`:
 
@@ -576,12 +576,12 @@ def inventory_scanned_at() -> str | None:
     return datetime.fromtimestamp(_inventory_cached_wall_at, timezone.utc).isoformat()
 ```
 
-- [ ] **Step 4: Verify green**
+- [x] **Step 4: Verify green**
 
 Run: `uv run --frozen --package pics-api --extra dev pytest tests/test_admin.py -x` (workdir `apps/api`)
 Expected: PASS — all admin tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/api/api/admin.py apps/api/tests/test_admin.py
@@ -595,7 +595,7 @@ git commit -m "feat: expose inventory scan timestamp for freshness labels"
 - Modify: `apps/api/api/main.py`
 - Test: `apps/api/tests/test_catalog.py` (create)
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `apps/api/tests/test_catalog.py`:
 
@@ -822,12 +822,12 @@ def test_apple_reported_at_uses_last_sync_timestamp(client):
     assert apple["reported_at"] == "2026-09-15T14:59:16+00:00"
 ```
 
-- [ ] **Step 2: Verify they fail**
+- [x] **Step 2: Verify they fail**
 
 Run: `uv run --frozen --package pics-api --extra dev pytest tests/test_catalog.py -x` (workdir `apps/api`)
 Expected: FAIL — 404 on `/catalog/overview`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Create `apps/api/api/catalog.py`:
 
@@ -1065,12 +1065,12 @@ In `apps/api/api/main.py`, change the import line to `from . import admin, catal
 app.include_router(catalog.router, prefix="/catalog", tags=["catalog"])
 ```
 
-- [ ] **Step 4: Verify green**
+- [x] **Step 4: Verify green**
 
 Run: `uv run --frozen --package pics-api --extra dev pytest tests -x` (workdir `apps/api`)
 Expected: PASS — all API tests including 11 new catalog tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/api/api/catalog.py apps/api/api/main.py apps/api/tests/test_catalog.py
@@ -1084,7 +1084,7 @@ git commit -m "feat: add catalog overview endpoint with per-source funnel stages
 
 The `_context` implementation landed in Task 7; this task locks it in with a test.
 
-- [ ] **Step 1: Write the test**
+- [x] **Step 1: Write the test**
 
 Append to `apps/api/tests/test_catalog.py`:
 
@@ -1122,12 +1122,12 @@ def test_context_blocks(client):
     assert recent[1]["id"] == first
 ```
 
-- [ ] **Step 2: Verify green**
+- [x] **Step 2: Verify green**
 
 Run: `uv run --frozen --package pics-api --extra dev pytest tests/test_catalog.py -x` (workdir `apps/api`)
 Expected: PASS — 12 tests.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/api/tests/test_catalog.py
@@ -1142,7 +1142,7 @@ git commit -m "test: verify catalog overview context blocks"
 - Create: `apps/web/lib/funnel.ts`
 - Test: `apps/web/lib/funnel.test.ts` (create)
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `apps/web/lib/funnel.test.ts`:
 
@@ -1230,12 +1230,12 @@ describe("freshnessLabel", () => {
 });
 ```
 
-- [ ] **Step 2: Verify it fails**
+- [x] **Step 2: Verify it fails**
 
 Run: `pnpm --filter web test` (workdir repo root)
 Expected: FAIL — `./funnel` module not found (and `SourceOverview` type missing).
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Append to `apps/web/types.ts`:
 
@@ -1350,12 +1350,12 @@ export function freshnessLabel(source: SourceOverview, now: Date = new Date()): 
 }
 ```
 
-- [ ] **Step 4: Verify green**
+- [x] **Step 4: Verify green**
 
 Run: `pnpm --filter web test` and `pnpm --filter web check` (workdir repo root)
 Expected: PASS — vitest 2 files (search-parser + funnel); tsc no errors.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/web/types.ts apps/web/lib/api.ts apps/web/lib/funnel.ts apps/web/lib/funnel.test.ts
@@ -1367,7 +1367,7 @@ git commit -m "feat: add catalog overview types and funnel helpers"
 **Files:**
 - Modify: `apps/web/app/globals.css`
 
-- [ ] **Step 1: Append styles**
+- [x] **Step 1: Append styles**
 
 Append to `apps/web/app/globals.css`:
 
@@ -1399,12 +1399,12 @@ button.funnelStage:hover { border-color: var(--accent); }
 .proportionBar > span { display: block; height: 100%; }
 ```
 
-- [ ] **Step 2: Verify**
+- [x] **Step 2: Verify**
 
 Run: `pnpm --filter web check` (workdir repo root)
 Expected: PASS (CSS is not type-checked; this confirms nothing else broke). Visual check happens in Task 11/12.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/web/app/globals.css
@@ -1416,7 +1416,7 @@ git commit -m "feat: add funnel and catalog context styles"
 **Files:**
 - Modify: `apps/web/app/photos/page.tsx`
 
-- [ ] **Step 1: Replace the page**
+- [x] **Step 1: Replace the page**
 
 Replace the entire contents of `apps/web/app/photos/page.tsx` with:
 
@@ -1613,12 +1613,12 @@ export default function PhotosPage() {
 }
 ```
 
-- [ ] **Step 2: Verify**
+- [x] **Step 2: Verify**
 
 Run: `pnpm --filter web check` and `pnpm --filter web test` (workdir repo root)
 Expected: PASS — tsc no errors; vitest suites still green.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/web/app/photos/page.tsx
@@ -1627,16 +1627,16 @@ git commit -m "feat: rebuild photos page as catalog overview"
 
 ### Task 12: Final verification
 
-- [ ] **Step 1: Full test suite**
+- [x] **Step 1: Full test suite**
 
 Run: `pnpm test` (workdir repo root)
 Expected: PASS — web, pics-api, pics-cli, pics-core, pics-worker all green.
 
-- [ ] **Step 2: App starts clean**
+- [x] **Step 2: App starts clean**
 
 Run: `pnpm dev:docker:build` (or your usual dev stack) and confirm the API and web containers start without errors.
 
-- [ ] **Step 3: End-to-end manual check**
+- [x] **Step 3: End-to-end manual check**
 
 Open `http://localhost:3000/photos` and verify against the wireframe (`catalog-overview-design-diagram.svg`):
 
