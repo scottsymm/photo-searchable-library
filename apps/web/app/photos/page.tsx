@@ -83,10 +83,11 @@ export default function PhotosPage() {
   }, []);
 
   useEffect(() => {
-    if (!sync || !["queued", "running"].includes(sync.status)) return;
     const timer = window.setInterval(() => {
-      applePhotosSyncStatus().then(setSync).catch(() => undefined);
       catalogOverview().then(setOverview).catch(() => undefined);
+      if (sync && ["queued", "running"].includes(sync.status)) {
+        applePhotosSyncStatus().then(setSync).catch(() => undefined);
+      }
     }, 3000);
     return () => window.clearInterval(timer);
   }, [sync]);
