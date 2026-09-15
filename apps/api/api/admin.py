@@ -76,9 +76,11 @@ def _library_inventory() -> dict:
         WATCH_ROOT, onerror=lambda error: directories_with_errors.append(str(error))
     ):
         directory_path = Path(directory)
-        for dirname in dirnames:
-            if dirname.endswith(".photoslibrary"):
-                photos_libraries.append({"name": dirname, "path": str(directory_path / dirname)})
+        photos_directories = [dirname for dirname in dirnames if dirname.endswith(".photoslibrary")]
+        for dirname in photos_directories:
+            photos_libraries.append({"name": dirname, "path": str(directory_path / dirname)})
+        # Apple Photos bundles are application-managed; PhotoKit owns their contents.
+        dirnames[:] = [dirname for dirname in dirnames if dirname not in photos_directories]
         for filename in filenames:
             suffix = Path(filename).suffix.lower()
             if suffix in MEDIA_SUFFIXES:
