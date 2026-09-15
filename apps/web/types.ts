@@ -80,6 +80,8 @@ export interface SourceStatus {
   display_name: string;
   status: string;
   authorization_state: string | null;
+  watch_enabled: boolean;
+  ingest_mode: "bridge" | "watch" | "manual";
   last_sync_at: string | null;
   last_error: string | null;
   asset_count: number;
@@ -132,6 +134,8 @@ export interface SourceOverview {
   bridge_status: BridgeStatus;
   bridge_last_seen_at: string | null;
   authorization_state: string | null;
+  watch_enabled: boolean;
+  ingest_mode: "bridge" | "watch" | "manual";
   reported_at: string | null;
   stages: FunnelStages;
   sync: SourceSync | null;

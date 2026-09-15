@@ -112,4 +112,5 @@ button.funnelStage:hover { border-color: var(--accent); }
 .copyButton { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line); border-radius: 7px; padding: 6px 9px; color: var(--ink); background: var(--panel); font-size: .75rem; font-weight: 700; white-space: nowrap; }
 .copyButton:hover { border-color: var(--accent); color: var(--accent-dark); }
 .copyButton svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+.cardLink { color: var(--accent-dark); font-size: .82rem; font-weight: 700; text-decoration: underline; }
 @media (max-width: 650px) { .commandRow { align-items: stretch; flex-direction: column; } .copyButton { justify-content: center; } }

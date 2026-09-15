@@ -7,6 +7,7 @@ function source(partial: Partial<SourceOverview>): SourceOverview {
     kind: "apple_photos", display_name: "Apple Photos", readiness: "connected",
     readiness_detail: null, reported_at: null,
     bridge_status: "connected", bridge_last_seen_at: null, authorization_state: "authorized",
+    watch_enabled: false, ingest_mode: "bridge",
     stages: { discovered: 0, ready_to_import: 0, importing: 0, imported: 0, processing: 0, searchable: 0, failed_or_blocked: 0 },
     sync: null, actions: { can_sync: false }, ...partial,
   };

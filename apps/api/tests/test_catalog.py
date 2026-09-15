@@ -199,6 +199,16 @@ def test_apple_entry_exposes_bridge_state(client):
     assert apple["authorization_state"] == "authorized"
 
 
+def test_source_entries_explain_watch_and_manual_ingest(client):
+    data = _get(client)
+    mounted = _source(data, "mounted_folder")
+    uploads = _source(data, "uploads")
+    assert mounted["ingest_mode"] == "watch"
+    assert mounted["watch_enabled"] is False
+    assert uploads["ingest_mode"] == "manual"
+    assert uploads["watch_enabled"] is False
+
+
 def test_apple_reported_at_uses_last_sync_timestamp(client):
     generator, conn = _db(client)
     try:

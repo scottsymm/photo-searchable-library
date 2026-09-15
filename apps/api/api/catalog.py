@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends
 
 from core.sources import classify_path
+from core.settings import get as get_setting
 
 from .admin import cached_library_inventory, inventory_scanned_at
 from .deps import get_conn
@@ -121,6 +122,8 @@ def _apple_entry(conn, source, latest_sync, active):
         "bridge_status": source["bridge_status"],
         "bridge_last_seen_at": source["bridge_last_seen_at"],
         "authorization_state": source["authorization_state"],
+        "watch_enabled": False,
+        "ingest_mode": "bridge",
         "sync": dict(latest_sync) if latest_sync is not None else None,
         "actions": {"can_sync": True},
     }
@@ -142,6 +145,8 @@ def _mounted_entry(conn, source, inventory, active, failed_jobs):
         "kind": "mounted_folder", "display_name": source["display_name"],
         "readiness": readiness, "readiness_detail": detail,
         "reported_at": inventory_scanned_at(), "stages": stages, "sync": None,
+        "watch_enabled": get_setting(conn, "watch_enabled", "0") == "1",
+        "ingest_mode": "watch",
         "actions": {"can_sync": False},
     }
 
@@ -158,7 +163,8 @@ def _uploads_entry(conn, source, active, failed_jobs):
     return {
         "kind": "uploads", "display_name": source["display_name"],
         "readiness": "connected", "readiness_detail": None, "reported_at": None,
-        "stages": stages, "sync": None, "actions": {"can_sync": False},
+        "stages": stages, "sync": None, "watch_enabled": False,
+        "ingest_mode": "manual", "actions": {"can_sync": False},
     }
 
 
