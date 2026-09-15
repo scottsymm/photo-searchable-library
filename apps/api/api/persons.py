@@ -87,7 +87,8 @@ def list_persons(conn=Depends(get_conn)):
 
 
 @router.post("/cluster")
-def queue_cluster(request: ClusterRequest, conn=Depends(get_conn)):
+def queue_cluster(request: ClusterRequest | None = None, conn=Depends(get_conn)):
+    request = request or ClusterRequest()
     job_id = jobs.push(
         conn,
         "cluster_faces",
