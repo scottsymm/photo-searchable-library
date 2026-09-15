@@ -154,8 +154,7 @@ CREATE TABLE IF NOT EXISTS jobs (
 CREATE INDEX IF NOT EXISTS assets_taken_at_idx ON assets(taken_at);
 CREATE INDEX IF NOT EXISTS assets_place_idx ON assets(place_city, place_country);
 CREATE UNIQUE INDEX IF NOT EXISTS assets_source_asset_idx
-ON assets(source_id, source_asset_id)
-WHERE source_id IS NOT NULL AND source_asset_id IS NOT NULL;
+ON assets(source_id, source_asset_id);
 CREATE INDEX IF NOT EXISTS face_assignments_face_idx ON face_assignments(face_id);
 CREATE INDEX IF NOT EXISTS person_faces_face_idx ON person_faces(face_id);
 CREATE VIRTUAL TABLE IF NOT EXISTS vec0_content USING vec0(
