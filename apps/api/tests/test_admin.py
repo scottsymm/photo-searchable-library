@@ -15,6 +15,13 @@ def test_admin_settings_reject_invalid_value(client):
     assert response.status_code == 422
 
 
+def test_admin_status_returns_configured_mount_source(client, monkeypatch):
+    monkeypatch.setenv("PICS_MOUNT_SOURCE", "/private/photos")
+    response = client.get("/admin/status")
+    assert response.status_code == 200
+    assert response.json()["mount_source"] == "/private/photos"
+
+
 def test_admin_status_shape(client):
     response = client.get("/admin/status")
     assert response.status_code == 200
