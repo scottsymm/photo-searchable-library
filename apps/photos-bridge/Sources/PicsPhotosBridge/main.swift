@@ -71,7 +71,7 @@ func extract(resource: PHAssetResource, to output: URL) async throws {
     }
 }
 
-func upload(asset: PHAsset, resource: PHAssetResource, fileURL: URL, options: BridgeOptions) async throws {
+func upload(asset: PHAsset, resource: PHAssetResource, fileURL: URL, assetCount: Int, options: BridgeOptions) async throws {
     var request = URLRequest(url: options.apiURL.appendingPathComponent("/sources/apple-photos/assets"))
     request.httpMethod = "POST"
     let boundary = UUID().uuidString
@@ -87,6 +87,7 @@ func upload(asset: PHAsset, resource: PHAssetResource, fileURL: URL, options: Br
     field("source_asset_id", asset.localIdentifier)
     field("original_filename", resource.originalFilename)
     field("media_type", asset.mediaType == .video ? "video" : "image")
+    field("asset_count", String(assetCount))
     if let creationDate = asset.creationDate {
         field("taken_at", creationDate.ISO8601Format())
     }
@@ -136,7 +137,7 @@ struct PicsPhotosBridge {
             let output = temporaryDirectory.appendingPathComponent(resource.originalFilename)
             do {
                 try await extract(resource: resource, to: output)
-                try await upload(asset: asset, resource: resource, fileURL: output, options: options)
+                try await upload(asset: asset, resource: resource, fileURL: output, assetCount: assets.count, options: options)
                 print("uploaded=\(asset.localIdentifier)")
             } catch {
                 print("error=\(asset.localIdentifier) \(error.localizedDescription)")
