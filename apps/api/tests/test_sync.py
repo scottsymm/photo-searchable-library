@@ -64,3 +64,11 @@ def test_stale_running_sync_is_recovered_for_new_request(client, monkeypatch):
     conn.close()
     assert old["status"] == "error"
     assert old["error"] == "bridge lease expired"
+
+
+def test_sync_claim_is_not_reusable_while_running(client):
+    client.post("/sources/apple-photos/sync", json={"limit": 2})
+    first = client.post("/sources/apple-photos/sync/claim")
+    second = client.post("/sources/apple-photos/sync/claim")
+    assert first.json()["sync"]["status"] == "running"
+    assert second.json()["sync"] is None

@@ -112,11 +112,14 @@ def claim_apple_photos_sync(conn=Depends(get_conn)):
     if sync is None:
         return {"sync": None}
     now = datetime.now(timezone.utc).isoformat()
-    conn.execute(
-        "UPDATE source_syncs SET status = 'running', started_at = ? WHERE id = ?",
+    updated = conn.execute(
+        """UPDATE source_syncs SET status = 'running', started_at = ?
+        WHERE id = ? AND status = 'queued'""",
         (now, sync["id"]),
     )
     conn.commit()
+    if updated.rowcount != 1:
+        return {"sync": None}
     claimed = conn.execute("SELECT * FROM source_syncs WHERE id = ?", (sync["id"],)).fetchone()
     return {"sync": _sync_dict(claimed)}
 
