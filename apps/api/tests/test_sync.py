@@ -35,3 +35,32 @@ def test_apple_photos_sync_does_not_queue_two_active_requests(client):
     assert first.json()["already_active"] is False
     assert second.json()["already_active"] is True
     assert second.json()["sync"]["id"] == first.json()["sync"]["id"]
+
+
+def test_stale_running_sync_is_recovered_for_new_request(client, monkeypatch):
+    monkeypatch.setattr("api.sources.SYNC_LEASE_SECONDS", 1)
+    first = client.post("/sources/apple-photos/sync", json={"limit": 2})
+    old_sync_id = first.json()["sync"]["id"]
+    claimed = client.post("/sources/apple-photos/sync/claim")
+    assert claimed.json()["sync"]["status"] == "running"
+
+    from api.deps import DB_PATH
+    from core.conn import connect
+
+    conn = connect(DB_PATH)
+    conn.execute(
+        "UPDATE source_syncs SET started_at = '2000-01-01T00:00:00+00:00' WHERE id = ?",
+        (old_sync_id,),
+    )
+    conn.commit()
+    conn.close()
+
+    second = client.post("/sources/apple-photos/sync", json={"limit": 2})
+    assert second.json()["already_active"] is False
+    assert second.json()["sync"]["id"] != old_sync_id
+
+    conn = connect(DB_PATH)
+    old = conn.execute("SELECT status, error FROM source_syncs WHERE id = ?", (old_sync_id,)).fetchone()
+    conn.close()
+    assert old["status"] == "error"
+    assert old["error"] == "bridge lease expired"

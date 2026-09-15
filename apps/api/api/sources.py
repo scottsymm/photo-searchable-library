@@ -6,7 +6,7 @@ import os
 import json
 import shutil
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile
@@ -20,6 +20,7 @@ from .deps import get_conn
 
 router = APIRouter()
 LIBRARY = Path(os.environ.get("PICS_LIBRARY", "library"))
+SYNC_LEASE_SECONDS = int(os.environ.get("PICS_SOURCE_SYNC_LEASE_SECONDS", "3600"))
 
 
 class SyncRequest(BaseModel):
@@ -42,9 +43,22 @@ def _active_import_exists(conn, path: str) -> bool:
     return any(path in json.loads(row["params"] or "{}").get("paths", []) for row in rows)
 
 
+def _recover_stale_syncs(conn, source_id: int) -> None:
+    cutoff = (datetime.now(timezone.utc) - timedelta(seconds=SYNC_LEASE_SECONDS)).isoformat()
+    now = datetime.now(timezone.utc).isoformat()
+    conn.execute(
+        """UPDATE source_syncs SET status = 'error', completed_at = ?,
+        error = 'bridge lease expired'
+        WHERE source_id = ? AND status = 'running' AND started_at < ?""",
+        (now, source_id, cutoff),
+    )
+    conn.commit()
+
+
 @router.post("/apple-photos/sync")
 def request_apple_photos_sync(request: SyncRequest, conn=Depends(get_conn)):
     source = get_source(conn, "apple_photos")
+    _recover_stale_syncs(conn, source["id"])
     active = conn.execute(
         """SELECT * FROM source_syncs
         WHERE source_id = ? AND status IN ('queued', 'running')
@@ -77,6 +91,7 @@ def known_apple_photos_assets(request: KnownAssetsRequest, conn=Depends(get_conn
 @router.get("/apple-photos/sync/status")
 def apple_photos_sync_status(conn=Depends(get_conn)):
     source = get_source(conn, "apple_photos")
+    _recover_stale_syncs(conn, source["id"])
     sync = conn.execute(
         "SELECT * FROM source_syncs WHERE source_id = ? ORDER BY id DESC LIMIT 1",
         (source["id"],),
@@ -87,6 +102,7 @@ def apple_photos_sync_status(conn=Depends(get_conn)):
 @router.post("/apple-photos/sync/claim")
 def claim_apple_photos_sync(conn=Depends(get_conn)):
     source = get_source(conn, "apple_photos")
+    _recover_stale_syncs(conn, source["id"])
     sync = conn.execute(
         """SELECT * FROM source_syncs
         WHERE source_id = ? AND status = 'queued'
