@@ -73,3 +73,15 @@ export interface LibraryInventory {
   directory_errors: string[];
   catalog: { assets: number; mounted_assets: number; faces: number };
 }
+
+export interface SourceStatus {
+  id: number;
+  kind: string;
+  display_name: string;
+  status: string;
+  authorization_state: string | null;
+  last_sync_at: string | null;
+  last_error: string | null;
+  asset_count: number;
+  imported_count: number;
+}
