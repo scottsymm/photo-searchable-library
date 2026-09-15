@@ -194,6 +194,7 @@ func syncAssets(options: BridgeOptions, limit: Int, fullSync: Bool = false) asyn
     }
     let temporaryDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     try? FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: temporaryDirectory) }
     var importedCount = 0
     var failedCount = 0
     var errors: [String] = []
@@ -209,6 +210,7 @@ func syncAssets(options: BridgeOptions, limit: Int, fullSync: Bool = false) asyn
         if options.dryRun { continue }
         let output = temporaryDirectory.appendingPathComponent(resource.originalFilename)
         do {
+            defer { try? FileManager.default.removeItem(at: output) }
             try await extract(resource: resource, to: output)
             try await upload(asset: asset, resource: resource, fileURL: output, assetCount: assets.count, options: options)
             importedCount += 1
