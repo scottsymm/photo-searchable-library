@@ -20,6 +20,16 @@ Import the first 25 assets into the local API:
 swift run PicsPhotosBridge --limit 25
 ```
 
+Keep the bridge available for UI-triggered sync requests:
+
+```bash
+swift run PicsPhotosBridge --watch --poll-interval 5
+```
+
+With the bridge watching, use the **Sync Apple Photos** button in Pics. The
+bridge claims the request, imports the bounded batch, and reports completion;
+the existing Pics worker processes each uploaded asset.
+
 Use a different API URL or limit:
 
 ```bash

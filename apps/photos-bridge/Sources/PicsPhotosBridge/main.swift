@@ -5,6 +5,17 @@ struct BridgeOptions {
     var apiURL = URL(string: "http://localhost:8000")!
     var limit = 25
     var dryRun = false
+    var watch = false
+    var pollInterval: UInt64 = 5
+}
+
+struct SyncRequest: Codable {
+    let id: Int
+    let limit_count: Int
+}
+
+struct SyncResponse: Codable {
+    let sync: SyncRequest?
 }
 
 func parseOptions() -> BridgeOptions {
@@ -22,11 +33,44 @@ func parseOptions() -> BridgeOptions {
             }
         case "--dry-run":
             options.dryRun = true
+        case "--watch":
+            options.watch = true
+        case "--poll-interval":
+            if let value = arguments.popFirst(), let interval = UInt64(value) {
+                options.pollInterval = max(1, interval)
+            }
         default:
             break
         }
     }
     return options
+}
+
+func apiRequest(_ path: String, method: String, body: Data? = nil, options: BridgeOptions) async throws -> Data {
+    var request = URLRequest(url: options.apiURL.appendingPathComponent(path))
+    request.httpMethod = method
+    request.httpBody = body
+    if body != nil {
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+    }
+    let (data, response) = try await URLSession.shared.data(for: request)
+    guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+        throw NSError(domain: "PicsPhotosBridge", code: 2, userInfo: [NSLocalizedDescriptionKey: String(data: data, encoding: .utf8) ?? "API request failed"])
+    }
+    return data
+}
+
+func claimSync(options: BridgeOptions) async throws -> SyncRequest? {
+    let data = try await apiRequest("/sources/apple-photos/sync/claim", method: "POST", options: options)
+    return try JSONDecoder().decode(SyncResponse.self, from: data).sync
+}
+
+func completeSync(_ sync: SyncRequest, importedCount: Int, error: String? = nil, options: BridgeOptions) async throws {
+    var fields = "imported_count=\(importedCount)"
+    if let error {
+        fields += "&error=\(error.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? error)"
+    }
+    _ = try await apiRequest("/sources/apple-photos/sync/\(sync.id)/complete", method: "POST", body: fields.data(using: .utf8), options: options)
 }
 
 func authorizationName(_ status: PHAuthorizationStatus) -> String {
@@ -107,6 +151,38 @@ func upload(asset: PHAsset, resource: PHAssetResource, fileURL: URL, assetCount:
     }
 }
 
+func syncAssets(options: BridgeOptions, limit: Int) async throws -> Int {
+    let fetchOptions = PHFetchOptions()
+    fetchOptions.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
+    let assets = PHAsset.fetchAssets(with: fetchOptions)
+    print("asset_count=\(assets.count)")
+
+    let count = min(limit, assets.count)
+    let temporaryDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try? FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
+    var importedCount = 0
+
+    for index in 0..<count {
+        let asset = assets.object(at: index)
+        guard let resource = primaryResource(for: asset) else {
+            print("skip=\(asset.localIdentifier) reason=no-resource")
+            continue
+        }
+        print("asset=\(asset.localIdentifier) file=\(resource.originalFilename)")
+        if options.dryRun { continue }
+        let output = temporaryDirectory.appendingPathComponent(resource.originalFilename)
+        do {
+            try await extract(resource: resource, to: output)
+            try await upload(asset: asset, resource: resource, fileURL: output, assetCount: assets.count, options: options)
+            importedCount += 1
+            print("uploaded=\(asset.localIdentifier)")
+        } catch {
+            print("error=\(asset.localIdentifier) \(error.localizedDescription)")
+        }
+    }
+    return importedCount
+}
+
 @main
 struct PicsPhotosBridge {
     static func main() async {
@@ -117,31 +193,22 @@ struct PicsPhotosBridge {
             exit(2)
         }
 
-        let fetchOptions = PHFetchOptions()
-        fetchOptions.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
-        let assets = PHAsset.fetchAssets(with: fetchOptions)
-        print("asset_count=\(assets.count)")
-
-        let count = min(options.limit, assets.count)
-        let temporaryDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        try? FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
-
-        for index in 0..<count {
-            let asset = assets.object(at: index)
-            guard let resource = primaryResource(for: asset) else {
-                print("skip=\(asset.localIdentifier) reason=no-resource")
-                continue
-            }
-            print("asset=\(asset.localIdentifier) file=\(resource.originalFilename)")
-            if options.dryRun { continue }
-            let output = temporaryDirectory.appendingPathComponent(resource.originalFilename)
-            do {
-                try await extract(resource: resource, to: output)
-                try await upload(asset: asset, resource: resource, fileURL: output, assetCount: assets.count, options: options)
-                print("uploaded=\(asset.localIdentifier)")
-            } catch {
-                print("error=\(asset.localIdentifier) \(error.localizedDescription)")
+        if options.watch {
+            print("watching_for_sync_requests=true")
+            while true {
+                do {
+                    if let sync = try await claimSync(options: options) {
+                        print("sync_started=\(sync.id) limit=\(sync.limit_count)")
+                        let importedCount = try await syncAssets(options: options, limit: sync.limit_count)
+                        try await completeSync(sync, importedCount: importedCount, options: options)
+                        print("sync_completed=\(sync.id) imported=\(importedCount)")
+                    }
+                } catch {
+                    print("sync_error=\(error.localizedDescription)")
+                }
+                try? await Task.sleep(for: .seconds(options.pollInterval))
             }
         }
+        _ = try? await syncAssets(options: options, limit: options.limit)
     }
 }

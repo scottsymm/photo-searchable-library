@@ -5,9 +5,11 @@ from __future__ import annotations
 import os
 import shutil
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile
+from pydantic import BaseModel, Field
 
 from core import jobs
 from core.assets import sha256_file
@@ -17,6 +19,79 @@ from .deps import get_conn
 
 router = APIRouter()
 LIBRARY = Path(os.environ.get("PICS_LIBRARY", "library"))
+
+
+class SyncRequest(BaseModel):
+    limit: int = Field(default=25, ge=1, le=500)
+
+
+def _sync_dict(row):
+    return dict(row) if row is not None else None
+
+
+@router.post("/apple-photos/sync")
+def request_apple_photos_sync(request: SyncRequest, conn=Depends(get_conn)):
+    source = get_source(conn, "apple_photos")
+    active = conn.execute(
+        """SELECT * FROM source_syncs
+        WHERE source_id = ? AND status IN ('queued', 'running')
+        ORDER BY id DESC LIMIT 1""",
+        (source["id"],),
+    ).fetchone()
+    if active is not None:
+        return {"sync": _sync_dict(active), "already_active": True}
+    cursor = conn.execute(
+        "INSERT INTO source_syncs(source_id, limit_count) VALUES (?, ?)",
+        (source["id"], request.limit),
+    )
+    conn.commit()
+    sync = conn.execute("SELECT * FROM source_syncs WHERE id = ?", (cursor.lastrowid,)).fetchone()
+    return {"sync": _sync_dict(sync), "already_active": False}
+
+
+@router.get("/apple-photos/sync/status")
+def apple_photos_sync_status(conn=Depends(get_conn)):
+    source = get_source(conn, "apple_photos")
+    sync = conn.execute(
+        "SELECT * FROM source_syncs WHERE source_id = ? ORDER BY id DESC LIMIT 1",
+        (source["id"],),
+    ).fetchone()
+    return {"sync": _sync_dict(sync)}
+
+
+@router.post("/apple-photos/sync/claim")
+def claim_apple_photos_sync(conn=Depends(get_conn)):
+    source = get_source(conn, "apple_photos")
+    sync = conn.execute(
+        """SELECT * FROM source_syncs
+        WHERE source_id = ? AND status = 'queued'
+        ORDER BY id LIMIT 1""",
+        (source["id"],),
+    ).fetchone()
+    if sync is None:
+        return {"sync": None}
+    now = datetime.now(timezone.utc).isoformat()
+    conn.execute(
+        "UPDATE source_syncs SET status = 'running', started_at = ? WHERE id = ?",
+        (now, sync["id"]),
+    )
+    conn.commit()
+    claimed = conn.execute("SELECT * FROM source_syncs WHERE id = ?", (sync["id"],)).fetchone()
+    return {"sync": _sync_dict(claimed)}
+
+
+@router.post("/apple-photos/sync/{sync_id}/complete")
+def complete_apple_photos_sync(sync_id: int, imported_count: int = Form(0), error: str | None = Form(None), conn=Depends(get_conn)):
+    status = "error" if error else "done"
+    now = datetime.now(timezone.utc).isoformat()
+    conn.execute(
+        """UPDATE source_syncs SET status = ?, completed_at = ?, imported_count = ?, error = ?
+        WHERE id = ?""",
+        (status, now, imported_count, error, sync_id),
+    )
+    conn.commit()
+    sync = conn.execute("SELECT * FROM source_syncs WHERE id = ?", (sync_id,)).fetchone()
+    return {"sync": _sync_dict(sync)}
 
 
 @router.get("/apple-photos/status")

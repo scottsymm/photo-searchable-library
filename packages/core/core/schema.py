@@ -55,6 +55,18 @@ CREATE TABLE IF NOT EXISTS sources (
   UNIQUE(kind)
 );
 
+CREATE TABLE IF NOT EXISTS source_syncs (
+  id INTEGER PRIMARY KEY,
+  source_id INTEGER NOT NULL REFERENCES sources(id),
+  status TEXT NOT NULL DEFAULT 'queued',
+  limit_count INTEGER NOT NULL DEFAULT 25,
+  requested_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  started_at TEXT,
+  completed_at TEXT,
+  imported_count INTEGER NOT NULL DEFAULT 0,
+  error TEXT
+);
+
 CREATE TABLE IF NOT EXISTS persons (
   id INTEGER PRIMARY KEY,
   name TEXT NOT NULL DEFAULT '',

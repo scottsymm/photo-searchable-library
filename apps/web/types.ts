@@ -85,3 +85,15 @@ export interface SourceStatus {
   asset_count: number;
   imported_count: number;
 }
+
+export interface SourceSync {
+  id: number;
+  source_id: number;
+  status: "queued" | "running" | "done" | "error";
+  limit_count: number;
+  requested_at: string;
+  started_at: string | null;
+  completed_at: string | null;
+  imported_count: number;
+  error: string | null;
+}
