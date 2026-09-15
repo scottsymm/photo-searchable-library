@@ -142,31 +142,44 @@ func upload(asset: PHAsset, resource: PHAssetResource, fileURL: URL, assetCount:
     let boundary = UUID().uuidString
     request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
 
-    var body = Data()
-    func field(_ name: String, _ value: String) {
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"\(name)\"\r\n\r\n".data(using: .utf8)!)
-        body.append("\(value)\r\n".data(using: .utf8)!)
+    let bodyURL = fileURL.deletingLastPathComponent().appendingPathComponent(".upload-\(UUID().uuidString)")
+    FileManager.default.createFile(atPath: bodyURL.path, contents: nil)
+    defer { try? FileManager.default.removeItem(at: bodyURL) }
+
+    let bodyFile = try FileHandle(forWritingTo: bodyURL)
+    defer { try? bodyFile.close() }
+    func write(_ value: String) throws {
+        try bodyFile.write(contentsOf: Data(value.utf8))
+    }
+    func field(_ name: String, _ value: String) throws {
+        try write("--\(boundary)\r\n")
+        try write("Content-Disposition: form-data; name=\"\(name)\"\r\n\r\n")
+        try write("\(value)\r\n")
     }
 
-    field("source_asset_id", asset.localIdentifier)
-    field("original_filename", resource.originalFilename)
-    field("media_type", asset.mediaType == .video ? "video" : "image")
-    field("asset_count", String(assetCount))
+    try field("source_asset_id", asset.localIdentifier)
+    try field("original_filename", resource.originalFilename)
+    try field("media_type", asset.mediaType == .video ? "video" : "image")
+    try field("asset_count", String(assetCount))
     if let creationDate = asset.creationDate {
-        field("taken_at", creationDate.ISO8601Format())
+        try field("taken_at", creationDate.ISO8601Format())
     }
-    field("authorization_state", authorizationName(PHPhotoLibrary.authorizationStatus(for: .readWrite)))
+    try field("authorization_state", authorizationName(PHPhotoLibrary.authorizationStatus(for: .readWrite)))
 
     let filename = resource.originalFilename
     let mime = asset.mediaType == .video ? "video/quicktime" : "application/octet-stream"
-    body.append("--\(boundary)\r\n".data(using: .utf8)!)
-    body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
-    body.append("Content-Type: \(mime)\r\n\r\n".data(using: .utf8)!)
-    body.append(try Data(contentsOf: fileURL))
-    body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+    try write("--\(boundary)\r\n")
+    try write("Content-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\n")
+    try write("Content-Type: \(mime)\r\n\r\n")
+    let sourceFile = try FileHandle(forReadingFrom: fileURL)
+    defer { try? sourceFile.close() }
+    while let chunk = try sourceFile.read(upToCount: 1024 * 1024), !chunk.isEmpty {
+        try bodyFile.write(contentsOf: chunk)
+    }
+    try write("\r\n--\(boundary)--\r\n")
+    try bodyFile.close()
 
-    let (data, response) = try await URLSession.shared.upload(for: request, from: body)
+    let (data, response) = try await URLSession.shared.upload(for: request, fromFile: bodyURL)
     guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
         throw NSError(domain: "PicsPhotosBridge", code: 1, userInfo: [NSLocalizedDescriptionKey: String(data: data, encoding: .utf8) ?? "upload failed"])
     }
