@@ -55,3 +55,11 @@ def test_migrate_backfills_source_ids(tmp_path, monkeypatch):
     assert rows[paths["upload"]] == expected["uploads"]
     assert rows[paths["mounted"]] == expected["mounted_folder"]
     assert rows[paths["other"]] is None
+
+
+def test_migrate_adds_bridge_presence_columns(tmp_path):
+    conn = connect(str(tmp_path / "catalog.db"))
+    migrate(conn)
+    columns = {row["name"] for row in conn.execute("PRAGMA table_info(sources)")}
+    conn.close()
+    assert {"bridge_status", "bridge_last_seen_at"} <= columns

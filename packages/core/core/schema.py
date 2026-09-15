@@ -49,6 +49,8 @@ CREATE TABLE IF NOT EXISTS sources (
   display_name TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'not_connected',
   authorization_state TEXT,
+  bridge_status TEXT NOT NULL DEFAULT 'offline',
+  bridge_last_seen_at TEXT,
   last_sync_at TEXT,
   last_error TEXT,
   asset_count INTEGER NOT NULL DEFAULT 0,
@@ -202,6 +204,13 @@ def migrate(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE source_syncs ADD COLUMN full_sync INTEGER NOT NULL DEFAULT 0")
     if existing_sync_columns and "failed_count" not in existing_sync_columns:
         conn.execute("ALTER TABLE source_syncs ADD COLUMN failed_count INTEGER NOT NULL DEFAULT 0")
+    existing_source_columns = {
+        row["name"] for row in conn.execute("PRAGMA table_info(sources)")
+    }
+    if existing_source_columns and "bridge_status" not in existing_source_columns:
+        conn.execute("ALTER TABLE sources ADD COLUMN bridge_status TEXT NOT NULL DEFAULT 'offline'")
+    if existing_source_columns and "bridge_last_seen_at" not in existing_source_columns:
+        conn.execute("ALTER TABLE sources ADD COLUMN bridge_last_seen_at TEXT")
     conn.executescript(SCHEMA)
     conn.execute(
         "INSERT OR REPLACE INTO schema_meta(key, value) VALUES ('version', '3')"
