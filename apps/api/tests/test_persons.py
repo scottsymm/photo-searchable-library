@@ -10,6 +10,12 @@ def test_cluster_job_can_be_queued(client, tmp_path):
     assert response.json()["status"] == "queued"
 
 
+def test_cluster_job_uses_defaults_without_request_body(client):
+    response = client.post("/persons/cluster")
+    assert response.status_code == 200
+    assert response.json()["status"] == "queued"
+
+
 def test_confirm_suggestion_creates_durable_person_link(client, tmp_path):
     from api.deps import get_conn
 

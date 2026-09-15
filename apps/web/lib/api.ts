@@ -1,4 +1,4 @@
-import type { AdminSettings, AdminStatus, Asset, ClusterSuggestion, Job, Person, Place } from "../types";
+import type { AdminSettings, AdminStatus, Asset, ClusterSuggestion, Job, LibraryInventory, Person, Place } from "../types";
 
 const API = process.env.NEXT_PUBLIC_PICS_API_URL ?? "http://localhost:8000";
 
@@ -65,6 +65,12 @@ export async function rejectSuggestion(id: number): Promise<void> {
 export async function adminStatus(): Promise<AdminStatus> {
   const response = await fetch(apiUrl("/admin/status"), { cache: "no-store" });
   if (!response.ok) throw new Error("Status request failed");
+  return response.json();
+}
+
+export async function libraryInventory(): Promise<LibraryInventory> {
+  const response = await fetch(apiUrl("/admin/library"), { cache: "no-store" });
+  if (!response.ok) throw new Error("Library inventory request failed");
   return response.json();
 }
 
