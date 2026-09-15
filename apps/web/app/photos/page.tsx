@@ -7,6 +7,11 @@ import { STAGES, bridgeLabel, freshnessLabel, readinessLabel } from "../../lib/f
 import type { CatalogOverview, FunnelStages, SourceOverview, SourceSync } from "../../types";
 
 function badgeClass(source: SourceOverview): string {
+  if (source.kind === "apple_photos") {
+    if (source.bridge_status === "connected") return "badge badgeOk";
+    if (source.bridge_status === "authorization_required") return "badge badgeWarn";
+    return "badge badgeMuted";
+  }
   if (source.ingest_mode === "manual") return "badge badgeMuted";
   if (source.ingest_mode === "watch") return source.watch_enabled ? "badge badgeOk" : "badge badgeMuted";
   if (source.readiness === "connected") return "badge badgeOk";
@@ -26,6 +31,17 @@ function sourceLabel(source: SourceOverview): string {
   if (source.ingest_mode === "manual") return "Manual upload";
   if (source.ingest_mode === "watch") return source.watch_enabled ? "Watching" : "Watch paused";
   return source.kind === "apple_photos" ? bridgeLabel(source.bridge_status) : readinessLabel(source.readiness);
+}
+
+function RecentImport(props: { asset: CatalogOverview["context"]["recent_imports"][number]; sourceName: string }) {
+  const { asset, sourceName } = props;
+  const [thumbnailFailed, setThumbnailFailed] = useState(false);
+  return (
+    <figure className="photo">
+      {thumbnailFailed ? <div className="photoPlaceholder" role="img" aria-label="Thumbnail not available"><span>Thumbnail<br />not ready</span></div> : <img src={thumbnailUrl(asset.id)} alt={asset.original_filename ?? "Imported asset"} loading="lazy" onError={() => setThumbnailFailed(true)} />}
+      <figcaption>{sourceName}</figcaption>
+    </figure>
+  );
 }
 
 function SourceCard(props: { source: SourceOverview; photosLibraries: { name: string; path: string }[]; sync: SourceSync | null; syncing: boolean; onSync: (full: boolean) => void; onRequestFullSync: () => void }) {
@@ -101,7 +117,7 @@ export default function PhotosPage() {
       {expanded && <div className="drilldown"><strong>{STAGES.find((s) => s.key === expanded)?.label} — by source</strong>{overview.sources.map((source) => { const value = source.stages[expanded]; const max = Math.max(1, ...overview.sources.map((s) => s.stages[expanded])); return <div className="barRow" key={source.kind}><span>{source.display_name}</span><span className="barTrack"><span className="barFill" style={{ width: `${(value / max) * 100}%` }} /></span><strong>{value.toLocaleString()}</strong></div>; })}</div>}
       <h2>Source connections</h2>{syncError && <p className="status">{syncError}</p>}<div className="cards">{overview.sources.map((source) => <SourceCard key={source.kind} source={source} photosLibraries={overview.context.photos_libraries} sync={source.kind === "apple_photos" ? sync : null} syncing={syncing} onSync={(full) => void startSync(full)} onRequestFullSync={() => setConfirmFullSync(true)} />)}</div>
       {overview.context.photos_libraries.length > 0 && <><h2>Detected Photos libraries</h2><div className="cards">{overview.context.photos_libraries.map((library) => <div className="card" key={library.path}><strong>{library.name}</strong><span className="muted">Detected at <code>{library.path}</code>. Docker does not scan inside this Apple-managed bundle; the macOS bridge must report authorization and inventory.</span></div>)}</div></>}
-      <h2>Recent imports</h2>{overview.context.recent_imports.length === 0 ? <p className="muted">No assets imported yet.</p> : <div className="thumbRow">{overview.context.recent_imports.map((asset) => <figure key={asset.id} className="photo"><img src={thumbnailUrl(asset.id)} alt={asset.original_filename ?? "Imported asset"} loading="lazy" /><figcaption>{sourceNames[asset.source_kind ?? ""] ?? "Pics"}</figcaption></figure>)}</div>}
+      <h2>Recent imports</h2>{overview.context.recent_imports.length === 0 ? <p className="muted">No assets imported yet.</p> : <div className="thumbRow">{overview.context.recent_imports.map((asset) => <RecentImport key={asset.id} asset={asset} sourceName={sourceNames[asset.source_kind ?? ""] ?? "Pics"} />)}</div>}
       <h2>Catalog context</h2><div className="cards"><div className="card"><strong>Faces &amp; people</strong><span className="contextValue">{faces.total.toLocaleString()} faces</span><span className="muted">{faces.assigned.toLocaleString()} assigned to people · {faces.unassigned.toLocaleString()} unassigned</span><div className="proportionBar"><span style={{ width: `${assignedPct}%`, background: "#2e7d4f" }} /></div></div><div className="card"><strong>Places</strong><span className="contextValue">{places.located.toLocaleString()} located</span><span className="muted">{places.unlocated.toLocaleString()} assets without location data</span><div className="proportionBar"><span style={{ width: `${locatedPct}%`, background: "#4f6b8a" }} /></div></div></div>
     </main>
     <ConfirmDialog open={confirmFullSync} title="Run a full Apple Photos sync?" description="Pics will scan the entire Photos library and import only assets it does not already know about. The local bridge must be running." confirmLabel="Start full sync" onCancel={() => setConfirmFullSync(false)} onConfirm={() => { setConfirmFullSync(false); void startSync(true); }} />
