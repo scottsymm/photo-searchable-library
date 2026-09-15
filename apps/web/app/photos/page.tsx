@@ -36,10 +36,11 @@ function sourceLabel(source: SourceOverview): string {
 function RecentImport(props: { asset: CatalogOverview["context"]["recent_imports"][number]; sourceName: string }) {
   const { asset, sourceName } = props;
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
+  const filename = asset.original_filename ?? `Asset ${asset.id}`;
   return (
     <figure className="photo">
-      {thumbnailFailed ? <div className="photoPlaceholder" role="img" aria-label={`${asset.original_filename ?? `Asset ${asset.id}`} thumbnail not available`}><span><strong>{asset.original_filename ?? `Asset ${asset.id}`}</strong><br />Thumbnail not ready</span></div> : <img src={thumbnailUrl(asset.id)} alt={asset.original_filename ?? "Imported asset"} loading="lazy" onError={() => setThumbnailFailed(true)} />}
-      <figcaption>{sourceName}</figcaption>
+      {thumbnailFailed ? <div className="photoPlaceholder" role="img" aria-label={`${filename} preview pending`}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z" /><path d="M14 3v5h5M9 16h6M9 12h3" /></svg><span>Preview pending</span></div> : <img src={thumbnailUrl(asset.id)} alt={filename} loading="lazy" onError={() => setThumbnailFailed(true)} />}
+      <figcaption><strong className="assetName" title={filename}>{filename}</strong><span className="sourceName">{sourceName}</span></figcaption>
     </figure>
   );
 }

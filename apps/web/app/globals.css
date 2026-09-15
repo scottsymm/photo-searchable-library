@@ -56,8 +56,11 @@ h2 { font: 400 2rem Georgia, serif; letter-spacing: -.04em; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin-top: 32px; }
 .photo { min-width: 0; overflow: hidden; border-radius: 14px; background: var(--panel); }
 .photo img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; }
-.photoPlaceholder { display: grid; aspect-ratio: 1; place-items: center; color: var(--muted); background: var(--line); text-align: center; font-size: .78rem; line-height: 1.35; }
-.photo figcaption { padding: 10px 12px; color: var(--muted); font-size: .78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.photoPlaceholder { display: grid; aspect-ratio: 1; place-content: center; gap: 8px; color: var(--muted); background: var(--line); text-align: center; font-size: .78rem; line-height: 1.35; }
+.photoPlaceholder svg { width: 28px; height: 28px; margin: 0 auto; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.5; }
+.photo figcaption { display: grid; gap: 2px; min-width: 0; padding: 10px 12px; color: var(--muted); font-size: .78rem; }
+.assetName { min-width: 0; overflow: hidden; color: var(--ink); font-size: .82rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.sourceName { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
 .card { min-width: 0; border: 1px solid var(--line); border-radius: 16px; padding: 18px; background: #fffdf899; }
 .card code { overflow-wrap: anywhere; word-break: break-word; }
