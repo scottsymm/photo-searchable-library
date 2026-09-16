@@ -38,12 +38,14 @@ def _filter_ids(
         params.append(tag)
     if who:
         query += """ AND id IN (
-          SELECT faces.asset_id FROM faces
-          JOIN person_faces ON person_faces.face_id = faces.id
-          JOIN persons ON persons.id = person_faces.person_id
-          WHERE persons.name = ?
-        )"""
-        params.append(who)
+           SELECT faces.asset_id FROM faces
+           JOIN person_faces ON person_faces.face_id = faces.id
+           JOIN persons ON persons.id = person_faces.person_id
+           LEFT JOIN person_aliases ON person_aliases.person_id = persons.id
+           WHERE persons.name LIKE ? COLLATE NOCASE
+              OR person_aliases.alias LIKE ? COLLATE NOCASE
+         )"""
+        params.extend([f"%{who}%", f"%{who}%"])
     return {int(row["id"]) for row in conn.execute(query, params)}
 
 

@@ -77,11 +77,31 @@ h2 { font: 400 2rem Georgia, serif; letter-spacing: -.04em; }
 .mountState { margin: 0; color: var(--accent-dark); font-size: .9rem; font-weight: 700; }
 .faceRow { display: flex; gap: 6px; min-height: 92px; margin: 12px 0; overflow: auto; }
 .faceRow img { width: 86px; height: 86px; border-radius: 10px; object-fit: cover; background: var(--paper); }
+.personSummary { display: grid; grid-template-columns: 48px 1fr; align-items: center; gap: 10px; margin-bottom: 12px; }
+.personSummary img, .personPlaceholder { width: 48px; height: 48px; border-radius: 12px; object-fit: cover; background: var(--line); }
+.personPlaceholder { display: grid; place-items: center; color: var(--muted); font-size: 1.4rem; }
+.personSummary span { font-weight: 700; }
+.personSummary small { grid-column: 2; color: var(--muted); }
+.personPicker { position: relative; margin-top: 10px; }
+.pickerResults { position: absolute; z-index: 20; right: 0; left: 0; display: grid; gap: 4px; max-height: 240px; overflow: auto; border: 1px solid var(--line); border-radius: 12px; padding: 6px; background: var(--panel); box-shadow: 0 12px 28px #15211d22; }
+.pickerResult { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; border: 0; border-radius: 9px; padding: 6px; color: var(--ink); background: transparent; text-align: left; }
+.pickerResult:hover, .pickerResult:focus-visible { background: var(--paper); }
+.pickerResult .personSummary { flex: 1; margin: 0; }
+.aliasList { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.aliasChip { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 5px 9px; color: var(--ink); background: var(--line); font-size: .82rem; }
+.aliasChip button { border: 0; padding: 0; color: var(--muted); background: transparent; cursor: pointer; line-height: 1; }
+.aliasRow { display: flex; gap: 8px; margin-top: 10px; }
+.aliasRow .searchInput { min-width: 0; }
+.mergePanel { display: grid; gap: 10px; margin-top: 14px; border-top: 1px solid var(--line); padding-top: 14px; }
+.representativeChoices { display: grid; gap: 6px; color: var(--muted); font-size: .88rem; }
+.representativeChoices label { cursor: pointer; }
 .secondary { color: var(--ink); background: var(--line); }
 .muted { color: var(--muted); }
 .parkedBanner { position: sticky; top: 0; z-index: 50; padding: 14px 24px; color: white; background: var(--accent); font-weight: 700; text-align: center; }
 .parkedBanner a { color: white; text-decoration: underline; }
 @media (max-width: 650px) { .shell { padding: 20px 18px 40px; } .topbar { align-items: flex-start; flex-direction: column; margin-bottom: 38px; } .searchForm { align-items: stretch; flex-direction: column; } .button { width: 100%; } .cardAction { align-self: stretch; } }
+.aliasRow { align-items: center; }
+@media (max-width: 650px) { .aliasRow { align-items: stretch; flex-direction: column; } }
 .funnel { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 6px; }
 .funnelStage { flex: 1 1 130px; display: grid; gap: 2px; border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; background: #fffdf899; text-align: left; color: var(--ink); }
 button.funnelStage:hover { border-color: var(--accent); }

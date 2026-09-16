@@ -48,13 +48,42 @@ export async function queueClustering(): Promise<void> {
   if (!response.ok) throw new Error("Clustering request failed");
 }
 
-export async function confirmSuggestion(id: number, name: string): Promise<void> {
+export async function confirmSuggestion(id: number, update: { name?: string; person_id?: number }): Promise<void> {
   const response = await fetch(apiUrl(`/persons/suggestions/${id}/confirm`), {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify(update),
   });
   if (!response.ok) throw new Error("Could not confirm cluster");
+}
+
+export async function searchPersons(query: string): Promise<Person[]> {
+  const response = await fetch(apiUrl(`/persons/search?q=${encodeURIComponent(query)}`), { cache: "no-store" });
+  if (!response.ok) throw new Error("Person search failed");
+  return (await response.json()).persons;
+}
+
+export async function mergePersons(keepId: number, removeId: number, update: { name?: string; representative_face_id?: number }): Promise<void> {
+  const response = await fetch(apiUrl(`/persons/${keepId}/merge/${removeId}`), {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(update),
+  });
+  if (!response.ok) throw new Error("Could not merge people");
+}
+
+export async function addAlias(personId: number, alias: string): Promise<void> {
+  const response = await fetch(apiUrl(`/persons/${personId}/aliases`), {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ alias }),
+  });
+  if (!response.ok) throw new Error("Could not add alias");
+}
+
+export async function removeAlias(personId: number, aliasId: number): Promise<void> {
+  const response = await fetch(apiUrl(`/persons/${personId}/aliases/${aliasId}`), { method: "DELETE" });
+  if (!response.ok) throw new Error("Could not remove alias");
 }
 
 export async function rejectSuggestion(id: number): Promise<void> {

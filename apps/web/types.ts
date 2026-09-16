@@ -14,6 +14,16 @@ export interface Person {
   name: string;
   status: string;
   face_count: number;
+  prototype_face_id: number | null;
+  representative_url: string | null;
+  aliases: PersonAlias[];
+}
+
+export type PersonMatch = Person;
+
+export interface PersonAlias {
+  id: number;
+  alias: string;
 }
 
 export interface FaceSuggestion {
