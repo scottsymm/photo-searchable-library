@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import os
 import sqlite3
+from pathlib import Path
 
 
 SCHEMA = """
@@ -21,6 +23,7 @@ CREATE TABLE IF NOT EXISTS assets (
   source_asset_id TEXT,
   original_filename TEXT,
   taken_at TEXT,
+  created_at TEXT,
   gps_lat REAL,
   gps_lon REAL,
   place_city TEXT,
@@ -46,6 +49,8 @@ CREATE TABLE IF NOT EXISTS sources (
   display_name TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'not_connected',
   authorization_state TEXT,
+  bridge_status TEXT NOT NULL DEFAULT 'offline',
+  bridge_last_seen_at TEXT,
   last_sync_at TEXT,
   last_error TEXT,
   asset_count INTEGER NOT NULL DEFAULT 0,
@@ -188,6 +193,7 @@ def migrate(conn: sqlite3.Connection) -> None:
         ("source_id", "INTEGER REFERENCES sources(id)"),
         ("source_asset_id", "TEXT"),
         ("original_filename", "TEXT"),
+        ("created_at", "TEXT"),
     ):
         if existing_asset_columns and column not in existing_asset_columns:
             conn.execute(f"ALTER TABLE assets ADD COLUMN {column} {definition}")
@@ -198,6 +204,13 @@ def migrate(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE source_syncs ADD COLUMN full_sync INTEGER NOT NULL DEFAULT 0")
     if existing_sync_columns and "failed_count" not in existing_sync_columns:
         conn.execute("ALTER TABLE source_syncs ADD COLUMN failed_count INTEGER NOT NULL DEFAULT 0")
+    existing_source_columns = {
+        row["name"] for row in conn.execute("PRAGMA table_info(sources)")
+    }
+    if existing_source_columns and "bridge_status" not in existing_source_columns:
+        conn.execute("ALTER TABLE sources ADD COLUMN bridge_status TEXT NOT NULL DEFAULT 'offline'")
+    if existing_source_columns and "bridge_last_seen_at" not in existing_source_columns:
+        conn.execute("ALTER TABLE sources ADD COLUMN bridge_last_seen_at TEXT")
     conn.executescript(SCHEMA)
     conn.execute(
         "INSERT OR REPLACE INTO schema_meta(key, value) VALUES ('version', '3')"
@@ -208,4 +221,33 @@ def migrate(conn: sqlite3.Connection) -> None:
         """INSERT OR IGNORE INTO sources(kind, display_name, status)
         VALUES ('apple_photos', 'Apple Photos', 'not_connected')"""
     )
+    conn.execute(
+        """INSERT OR IGNORE INTO sources(kind, display_name, status)
+        VALUES ('mounted_folder', 'Mounted folder', 'not_connected')"""
+    )
+    conn.execute(
+        """INSERT OR IGNORE INTO sources(kind, display_name, status)
+        VALUES ('uploads', 'Uploads', 'not_connected')"""
+    )
+    _backfill_source_ids(conn)
     conn.commit()
+
+
+def _escape_like(value: str) -> str:
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
+def _backfill_source_ids(conn: sqlite3.Connection) -> None:
+    library = Path(os.environ.get("PICS_LIBRARY", "library")).resolve()
+    watch_root = Path(os.environ.get("PICS_WATCH_ROOT", "/media/photos")).resolve()
+    for prefix, kind in (
+        (library / "apple-photos", "apple_photos"),
+        (library / "imports", "uploads"),
+        (watch_root, "mounted_folder"),
+    ):
+        pattern = f"{_escape_like(str(prefix))}{_escape_like(os.sep)}%"
+        conn.execute(
+            """UPDATE assets SET source_id = (SELECT id FROM sources WHERE kind = ?)
+            WHERE source_id IS NULL AND path LIKE ? ESCAPE '\\'""",
+            (kind, pattern),
+        )

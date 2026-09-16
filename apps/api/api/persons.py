@@ -38,6 +38,32 @@ def _crop_url(face_id: int) -> str:
     return f"/persons/faces/{face_id}/crop"
 
 
+def _enrichment(conn):
+    total = conn.execute("SELECT COUNT(*) FROM faces").fetchone()[0]
+    ready = conn.execute("SELECT COUNT(*) FROM face_embeds").fetchone()[0]
+    assets_processing = conn.execute(
+        """SELECT COUNT(*) FROM assets a
+        WHERE a.deleted = 0 AND NOT EXISTS (
+          SELECT 1 FROM content_embeds e WHERE e.asset_id = a.id
+        )"""
+    ).fetchone()[0]
+    job = conn.execute("SELECT status FROM jobs WHERE kind = 'cluster_faces' ORDER BY id DESC LIMIT 1").fetchone()
+    run = conn.execute("SELECT id, status FROM clustering_runs ORDER BY id DESC LIMIT 1").fetchone()
+    if job is not None and job["status"] in ("queued", "working"):
+        status = "queued" if job["status"] == "queued" else "running"
+    elif total == 0:
+        status = "no_faces"
+    elif ready < total:
+        status = "indexing"
+    elif run is not None and run["status"] == "running":
+        status = "running"
+    elif run is not None and run["status"] == "completed":
+        status = "ready" if conn.execute("SELECT COUNT(*) FROM cluster_suggestions WHERE run_id = ?", (run["id"],)).fetchone()[0] > 0 else "completed_no_suggestions"
+    else:
+        status = "ready"
+    return {"total": total, "embeddings_ready": ready, "embeddings_pending": max(0, total - ready), "assets_processing": assets_processing, "clustering_status": status}
+
+
 def _suggestion(conn, suggestion_id: int):
     row = conn.execute(
         "SELECT * FROM cluster_suggestions WHERE id = ?", (suggestion_id,)
@@ -83,7 +109,7 @@ def list_persons(conn=Depends(get_conn)):
                 ],
             }
         )
-    return {"persons": [dict(row) for row in people], "suggestions": suggestions}
+    return {"persons": [dict(row) for row in people], "suggestions": suggestions, "enrichment": _enrichment(conn)}
 
 
 @router.post("/cluster")

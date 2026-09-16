@@ -1,4 +1,4 @@
-import type { AdminSettings, AdminStatus, Asset, ClusterSuggestion, Job, LibraryInventory, Person, Place, SourceStatus, SourceSync } from "../types";
+import type { AdminSettings, AdminStatus, Asset, CatalogOverview, ClusterSuggestion, FaceEnrichment, Job, LibraryInventory, Person, Place, SourceStatus, SourceSync } from "../types";
 
 const API = process.env.NEXT_PUBLIC_PICS_API_URL ?? "http://localhost:8000";
 
@@ -16,7 +16,7 @@ export async function search(params: Record<string, string | undefined>): Promis
   return (await response.json()).results;
 }
 
-export async function people(): Promise<{ persons: Person[]; suggestions: ClusterSuggestion[] }> {
+export async function people(): Promise<{ persons: Person[]; suggestions: ClusterSuggestion[]; enrichment: FaceEnrichment }> {
   const response = await fetch(apiUrl("/persons"), { cache: "no-store" });
   if (!response.ok) throw new Error("People request failed");
   return response.json();
@@ -113,4 +113,14 @@ export async function applePhotosSyncStatus(): Promise<SourceSync | null> {
   const response = await fetch(apiUrl("/sources/apple-photos/sync/status"), { cache: "no-store" });
   if (!response.ok) throw new Error("Apple Photos sync status request failed");
   return (await response.json()).sync;
+}
+
+export async function catalogOverview(): Promise<CatalogOverview> {
+  const response = await fetch(apiUrl("/catalog/overview"), { cache: "no-store" });
+  if (!response.ok) throw new Error("Catalog overview request failed");
+  return response.json();
+}
+
+export function thumbnailUrl(assetId: number): string {
+  return apiUrl(`/assets/${assetId}/thumbnail`);
 }

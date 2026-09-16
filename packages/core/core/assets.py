@@ -7,6 +7,8 @@ import json
 import sqlite3
 from datetime import datetime, timezone
 
+from .sources import classify_path
+
 
 def sha256_file(path: str) -> str:
     digest = hashlib.sha256()
@@ -50,17 +52,23 @@ def upsert_asset(
     thumbnail_id = None
     if thumbnail is not None:
         thumbnail_id = add_file(conn, f"{sha256}:thumbnail", "thumbnail", thumbnail)
+    source_kind = classify_path(path)
+    source_id = None
+    if source_kind is not None:
+        row = conn.execute("SELECT id FROM sources WHERE kind = ?", (source_kind,)).fetchone()
+        source_id = None if row is None else int(row["id"])
     conn.execute(
         """INSERT INTO assets
         (path, sha256, size_bytes, mime, taken_at, gps_lat, gps_lon,
-         place_city, place_country, thumbnail_id, extra)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         place_city, place_country, thumbnail_id, extra, source_id, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(path) DO UPDATE SET
           sha256 = excluded.sha256, size_bytes = excluded.size_bytes,
           mime = excluded.mime, taken_at = excluded.taken_at,
           gps_lat = excluded.gps_lat, gps_lon = excluded.gps_lon,
           place_city = excluded.place_city, place_country = excluded.place_country,
           thumbnail_id = excluded.thumbnail_id, extra = excluded.extra,
+          source_id = COALESCE(excluded.source_id, assets.source_id),
           deleted = 0""",
         (
             path,
@@ -74,6 +82,8 @@ def upsert_asset(
             place_country,
             thumbnail_id,
             json.dumps(extra or {}),
+            source_id,
+            datetime.now(timezone.utc).isoformat(),
         ),
     )
     conn.commit()

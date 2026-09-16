@@ -27,6 +27,11 @@ struct KnownAssetsResponse: Codable {
     let source_asset_ids: [String]
 }
 
+struct BridgeHeartbeat: Codable {
+    let authorization_state: String
+    let asset_count: Int
+}
+
 struct SyncResult {
     let importedCount: Int
     let failedCount: Int
@@ -79,6 +84,11 @@ func knownAssetIDs(_ sourceAssetIDs: [String], options: BridgeOptions) async thr
     let body = try JSONEncoder().encode(KnownAssetsRequest(source_asset_ids: sourceAssetIDs))
     let data = try await apiRequest("/sources/apple-photos/assets/known", method: "POST", body: body, contentType: "application/json", options: options)
     return Set(try JSONDecoder().decode(KnownAssetsResponse.self, from: data).source_asset_ids)
+}
+
+func sendHeartbeat(authorizationState: String, assetCount: Int, options: BridgeOptions) async throws {
+    let body = try JSONEncoder().encode(BridgeHeartbeat(authorization_state: authorizationState, asset_count: assetCount))
+    _ = try await apiRequest("/sources/apple-photos/bridge/heartbeat", method: "POST", body: body, contentType: "application/json", options: options)
 }
 
 func claimSync(options: BridgeOptions) async throws -> SyncRequest? {
@@ -243,6 +253,12 @@ struct PicsPhotosBridge {
         let options = parseOptions()
         let status = await requestAccess()
         print("authorization=\(authorizationName(status))")
+        let assetCount = (status == .authorized || status == .limited) ? PHAsset.fetchAssets(with: nil).count : 0
+        do {
+            try await sendHeartbeat(authorizationState: authorizationName(status), assetCount: assetCount, options: options)
+        } catch {
+            print("heartbeat_error=\(error.localizedDescription)")
+        }
         guard status == .authorized || status == .limited else {
             exit(2)
         }
@@ -251,6 +267,8 @@ struct PicsPhotosBridge {
             print("watching_for_sync_requests=true")
             while true {
                 do {
+                    let currentCount = PHAsset.fetchAssets(with: nil).count
+                    try await sendHeartbeat(authorizationState: authorizationName(PHPhotoLibrary.authorizationStatus(for: .readWrite)), assetCount: currentCount, options: options)
                     if let sync = try await claimSync(options: options) {
                         print("sync_started=\(sync.id) limit=\(sync.limit_count)")
                         do {

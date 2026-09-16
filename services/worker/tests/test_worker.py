@@ -36,3 +36,25 @@ def test_import_jpeg_without_model_download(tmp_path, monkeypatch):
     conn = connect(str(db_path))
     assert conn.execute("SELECT id FROM assets WHERE id = ?", (asset_id,)).fetchone()
     assert conn.execute("SELECT asset_id FROM content_embeds").fetchone()[0] == asset_id
+
+
+def test_import_assigns_mounted_source(tmp_path, monkeypatch):
+    watch = tmp_path / "watch"
+    watch.mkdir()
+    image_path = watch / "sample.jpg"
+    Image.new("RGB", (64, 64), (0, 200, 0)).save(image_path, "JPEG")
+    db_path = tmp_path / "catalog.db"
+    monkeypatch.setattr(config, "DB_PATH", str(db_path))
+    monkeypatch.setattr(config, "LIBRARY_ROOT", str(tmp_path / "library"))
+    os.makedirs(config.LIBRARY_ROOT)
+    monkeypatch.setattr("core.sources.WATCH_ROOT", watch)
+    monkeypatch.setattr("core.sources.LIBRARY", tmp_path / "library")
+
+    conn = connect(str(db_path))
+    migrate(conn)
+    conn.close()
+
+    asset_id = import_one(FakeClip(), NoFaces(), str(image_path))
+    conn = connect(str(db_path))
+    mounted_id = conn.execute("SELECT id FROM sources WHERE kind = 'mounted_folder'").fetchone()["id"]
+    assert conn.execute("SELECT source_id FROM assets WHERE id = ?", (asset_id,)).fetchone()[0] == mounted_id

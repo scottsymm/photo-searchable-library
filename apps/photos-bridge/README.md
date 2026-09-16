@@ -23,8 +23,11 @@ swift run PicsPhotosBridge --limit 25
 Keep the bridge available for UI-triggered sync requests:
 
 ```bash
-swift run PicsPhotosBridge --watch --poll-interval 5
+pnpm bridge:watch
 ```
+
+This root-level command runs `swift run` with the correct package path and poll
+interval for the developer workflow.
 
 With the bridge watching, use the **Sync Apple Photos** button in Pics. The
 bridge claims the request, imports the bounded batch, and reports completion;
@@ -41,4 +44,6 @@ swift run PicsPhotosBridge --api-url http://localhost:8000 --limit 100
 ```
 
 The first run asks macOS for Photos access. The bridge uses PhotoKit and does
-not read `Photos Library.photoslibrary` directly.
+not read `Photos Library.photoslibrary` directly. While running in watch mode it
+reports its authorization and inventory heartbeat to Pics, so the Photos page
+can guide the progression from a detected library to an available import.

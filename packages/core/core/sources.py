@@ -2,8 +2,25 @@
 
 from __future__ import annotations
 
+import os
 import sqlite3
 from datetime import datetime, timezone
+from pathlib import Path
+
+LIBRARY = Path(os.environ.get("PICS_LIBRARY", "library"))
+WATCH_ROOT = Path(os.environ.get("PICS_WATCH_ROOT", "/media/photos"))
+
+
+def classify_path(path: str) -> str | None:
+    """Map an asset path to a source kind, or None if it matches no source."""
+    resolved = Path(path).resolve()
+    library = LIBRARY.resolve()
+    for subdir, kind in (("apple-photos", "apple_photos"), ("imports", "uploads")):
+        if resolved.is_relative_to(library / subdir):
+            return kind
+    if resolved.is_relative_to(WATCH_ROOT.resolve()):
+        return "mounted_folder"
+    return None
 
 
 def get_source(conn: sqlite3.Connection, kind: str) -> sqlite3.Row:

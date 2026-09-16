@@ -16,6 +16,18 @@ def test_cluster_job_uses_defaults_without_request_body(client):
     assert response.json()["status"] == "queued"
 
 
+def test_people_reports_face_enrichment_state(client):
+    response = client.get("/persons")
+    assert response.status_code == 200
+    assert response.json()["enrichment"] == {
+        "total": 0,
+        "embeddings_ready": 0,
+        "embeddings_pending": 0,
+        "assets_processing": 0,
+        "clustering_status": "no_faces",
+    }
+
+
 def test_confirm_suggestion_creates_durable_person_link(client, tmp_path):
     from api.deps import get_conn
 

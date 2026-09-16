@@ -21,6 +21,7 @@ from .deps import get_conn
 router = APIRouter()
 LIBRARY = Path(os.environ.get("PICS_LIBRARY", "library"))
 SYNC_LEASE_SECONDS = int(os.environ.get("PICS_SOURCE_SYNC_LEASE_SECONDS", "3600"))
+BRIDGE_LEASE_SECONDS = int(os.environ.get("PICS_BRIDGE_LEASE_SECONDS", "15"))
 
 
 class SyncRequest(BaseModel):
@@ -32,8 +33,32 @@ class KnownAssetsRequest(BaseModel):
     source_asset_ids: list[str] = Field(min_length=1, max_length=500)
 
 
+class BridgeHeartbeat(BaseModel):
+    authorization_state: str
+    asset_count: int = Field(ge=0)
+
+
 def _sync_dict(row):
     return dict(row) if row is not None else None
+
+
+def _bridge_status(authorization_state: str, asset_count: int) -> str:
+    if authorization_state in ("denied", "restricted", "notDetermined"):
+        return "authorization_required"
+    return "inventory_pending" if asset_count == 0 else "connected"
+
+
+def _source_with_bridge_status(source):
+    result = dict(source)
+    last_seen = result.get("bridge_last_seen_at")
+    if last_seen is None:
+        result["bridge_status"] = "offline"
+    else:
+        seen_at = datetime.fromisoformat(last_seen)
+        age = datetime.now(timezone.utc) - seen_at
+        if age.total_seconds() > BRIDGE_LEASE_SECONDS:
+            result["bridge_status"] = "offline"
+    return result
 
 
 def _active_import_exists(conn, path: str) -> bool:
@@ -99,6 +124,20 @@ def apple_photos_sync_status(conn=Depends(get_conn)):
     return {"sync": _sync_dict(sync)}
 
 
+@router.post("/apple-photos/bridge/heartbeat")
+def apple_photos_bridge_heartbeat(heartbeat: BridgeHeartbeat, conn=Depends(get_conn)):
+    source = get_source(conn, "apple_photos")
+    now = datetime.now(timezone.utc).isoformat()
+    conn.execute(
+        """UPDATE sources SET bridge_status = ?, bridge_last_seen_at = ?,
+        authorization_state = ?, asset_count = ?, updated_at = ? WHERE id = ?""",
+        (_bridge_status(heartbeat.authorization_state, heartbeat.asset_count), now,
+         heartbeat.authorization_state, heartbeat.asset_count, now, source["id"]),
+    )
+    conn.commit()
+    return {"source": _source_with_bridge_status(get_source(conn, "apple_photos"))}
+
+
 @router.post("/apple-photos/sync/claim")
 def claim_apple_photos_sync(conn=Depends(get_conn)):
     source = get_source(conn, "apple_photos")
@@ -140,7 +179,7 @@ def complete_apple_photos_sync(sync_id: int, imported_count: int = Form(0), fail
 
 @router.get("/apple-photos/status")
 def apple_photos_status(conn=Depends(get_conn)):
-    source = dict(get_source(conn, "apple_photos"))
+    source = _source_with_bridge_status(get_source(conn, "apple_photos"))
     imported = conn.execute(
         """SELECT COUNT(*) FROM assets
         WHERE source_id = ? AND deleted = 0
@@ -204,8 +243,8 @@ async def ingest_apple_photos_asset(
 
     conn.execute(
         """INSERT INTO assets(
-          source_id, source_asset_id, original_filename, path, sha256, size_bytes, mime, taken_at, extra
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          source_id, source_asset_id, original_filename, path, sha256, size_bytes, mime, taken_at, extra, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(source_id, source_asset_id) DO UPDATE SET
           original_filename = excluded.original_filename,
           path = excluded.path,
@@ -220,6 +259,7 @@ async def ingest_apple_photos_asset(
             file.content_type or "application/octet-stream",
             taken_at,
             "{}",
+            datetime.now(timezone.utc).isoformat(),
         ),
     )
     asset_id = conn.execute(
