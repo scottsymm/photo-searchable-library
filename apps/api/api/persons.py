@@ -333,7 +333,7 @@ def merge(keep_id: int, remove_id: int, request: MergeRequest | None = None, con
             conn.execute("INSERT OR IGNORE INTO person_aliases(person_id, alias) VALUES (?, ?)", (keep_id, alias))
     if final_name is not None:
         conn.execute("UPDATE persons SET name = ?, status = 'named' WHERE id = ?", (final_name, keep_id))
-    if request.representative_face_id is not None:
+    if "representative_face_id" in request.model_fields_set:
         conn.execute(
             "UPDATE persons SET prototype_face_id = ? WHERE id = ?",
             (request.representative_face_id, keep_id),

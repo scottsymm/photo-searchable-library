@@ -101,7 +101,7 @@ function PersonCard({ person, onSaved }: { person: Person; onSaved: () => void }
   async function merge() {
     if (!mergeSource || !window.confirm(`Merge ${mergeSource.name || "unnamed person"} into ${person.name || "unnamed person"}?`)) return;
     setBusy(true);
-    await mergePersons(person.id, mergeSource.id, { name: mergeName, representative_face_id: mergeFace });
+    await mergePersons(person.id, mergeSource.id, { name: mergeName, representative_face_id: mergeFace ?? null });
     await onSaved();
     setMergeSource(null);
     setBusy(false);

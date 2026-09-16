@@ -234,3 +234,29 @@ def test_merge_rejects_unowned_representative_and_self_merge(client):
 
     assert client.post("/persons/1/merge/1", json={}).status_code == 400
     assert client.post("/persons/1/merge/2", json={"representative_face_id": 999}).status_code == 400
+
+
+def test_merge_can_clear_representative(client):
+    from api.deps import get_conn
+
+    connection_generator = client.app.dependency_overrides[get_conn]()
+    conn = next(connection_generator)
+    try:
+        conn.execute("INSERT INTO assets(id, path, sha256, size_bytes, mime) VALUES (1, '/tmp/1.jpg', ?, 1, 'image/jpeg')", ("1" * 64,))
+        conn.execute("INSERT INTO faces(id, asset_id, bbox) VALUES (1, 1, '[]')")
+        conn.execute("INSERT INTO persons(id, name, prototype_face_id) VALUES (1, 'One', 1)")
+        conn.execute("INSERT INTO persons(id, name) VALUES (2, 'Two')")
+        conn.execute("INSERT INTO person_faces(person_id, face_id, source) VALUES (1, 1, 'manual')")
+        conn.commit()
+    finally:
+        connection_generator.close()
+
+    response = client.post("/persons/1/merge/2", json={"representative_face_id": None})
+
+    assert response.status_code == 200
+    connection_generator = client.app.dependency_overrides[get_conn]()
+    conn = next(connection_generator)
+    try:
+        assert conn.execute("SELECT prototype_face_id FROM persons WHERE id = 1").fetchone()[0] is None
+    finally:
+        connection_generator.close()

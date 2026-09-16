@@ -63,7 +63,7 @@ export async function searchPersons(query: string): Promise<Person[]> {
   return (await response.json()).persons;
 }
 
-export async function mergePersons(keepId: number, removeId: number, update: { name?: string; representative_face_id?: number }): Promise<void> {
+export async function mergePersons(keepId: number, removeId: number, update: { name?: string; representative_face_id?: number | null }): Promise<void> {
   const response = await fetch(apiUrl(`/persons/${keepId}/merge/${removeId}`), {
     method: "POST",
     headers: { "content-type": "application/json" },
