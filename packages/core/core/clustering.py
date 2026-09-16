@@ -40,7 +40,13 @@ def run_clustering(
     )
     run_id = int(cur.lastrowid)
     rows = conn.execute(
-        "SELECT face_id, embed FROM face_embeds ORDER BY face_id"
+        """SELECT face_embeds.face_id, face_embeds.embed
+        FROM face_embeds
+        WHERE NOT EXISTS (
+            SELECT 1 FROM person_faces
+            WHERE person_faces.face_id = face_embeds.face_id
+        )
+        ORDER BY face_embeds.face_id"""
     ).fetchall()
     if not rows:
         conn.execute(

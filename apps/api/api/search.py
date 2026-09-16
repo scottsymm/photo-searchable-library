@@ -13,6 +13,10 @@ from .deps import embed_text, get_conn
 router = APIRouter()
 
 
+def _escape_like(value: str) -> str:
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
 def _filter_ids(
     conn: sqlite3.Connection,
     *,
@@ -25,8 +29,9 @@ def _filter_ids(
     query = "SELECT id FROM assets WHERE deleted = 0"
     params: list[str] = []
     if place:
-        query += " AND (place_city LIKE ? OR place_country LIKE ?)"
-        params.extend([f"%{place}%", f"%{place}%"])
+        escaped_place = _escape_like(place)
+        query += " AND (place_city LIKE ? ESCAPE '\\' OR place_country LIKE ? ESCAPE '\\')"
+        params.extend([f"%{escaped_place}%", f"%{escaped_place}%"])
     if before:
         query += " AND taken_at IS NOT NULL AND taken_at <= ?"
         params.append(before)
@@ -38,12 +43,15 @@ def _filter_ids(
         params.append(tag)
     if who:
         query += """ AND id IN (
-          SELECT faces.asset_id FROM faces
-          JOIN person_faces ON person_faces.face_id = faces.id
-          JOIN persons ON persons.id = person_faces.person_id
-          WHERE persons.name = ?
-        )"""
-        params.append(who)
+           SELECT faces.asset_id FROM faces
+           JOIN person_faces ON person_faces.face_id = faces.id
+           JOIN persons ON persons.id = person_faces.person_id
+           LEFT JOIN person_aliases ON person_aliases.person_id = persons.id
+           WHERE persons.name LIKE ? COLLATE NOCASE ESCAPE '\\'
+              OR person_aliases.alias LIKE ? COLLATE NOCASE ESCAPE '\\'
+         )"""
+        escaped_who = _escape_like(who)
+        params.extend([f"%{escaped_who}%", f"%{escaped_who}%"])
     return {int(row["id"]) for row in conn.execute(query, params)}
 
 

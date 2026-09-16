@@ -1,3 +1,4 @@
+import io
 import os
 
 from PIL import Image
@@ -36,6 +37,20 @@ def test_import_jpeg_without_model_download(tmp_path, monkeypatch):
     conn = connect(str(db_path))
     assert conn.execute("SELECT id FROM assets WHERE id = ?", (asset_id,)).fetchone()
     assert conn.execute("SELECT asset_id FROM content_embeds").fetchone()[0] == asset_id
+
+
+def test_transparent_thumbnail_uses_light_background(tmp_path):
+    image_path = tmp_path / "transparent.png"
+    image = Image.new("RGBA", (8, 8), (0, 0, 0, 0))
+    image.putpixel((0, 0), (255, 0, 0, 255))
+    image.save(image_path)
+
+    from worker.thumbnail import image_thumbnail
+
+    with Image.open(io.BytesIO(image_thumbnail(str(image_path)))) as thumbnail:
+        assert thumbnail.getpixel((7, 7))[0] > 220
+        assert thumbnail.getpixel((7, 7))[1] > 220
+        assert thumbnail.getpixel((7, 7))[2] > 210
 
 
 def test_import_assigns_mounted_source(tmp_path, monkeypatch):

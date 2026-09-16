@@ -81,6 +81,14 @@ CREATE TABLE IF NOT EXISTS persons (
   status TEXT NOT NULL DEFAULT 'new'
 );
 
+CREATE TABLE IF NOT EXISTS person_aliases (
+  id INTEGER PRIMARY KEY,
+  person_id INTEGER NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+  alias TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(person_id, alias)
+);
+
 CREATE TABLE IF NOT EXISTS faces (
   id INTEGER PRIMARY KEY,
   asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
@@ -176,6 +184,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS assets_source_asset_idx
 ON assets(source_id, source_asset_id);
 CREATE INDEX IF NOT EXISTS face_assignments_face_idx ON face_assignments(face_id);
 CREATE INDEX IF NOT EXISTS person_faces_face_idx ON person_faces(face_id);
+CREATE INDEX IF NOT EXISTS person_aliases_person_idx ON person_aliases(person_id);
 CREATE VIRTUAL TABLE IF NOT EXISTS vec0_content USING vec0(
   content_embed float[512]
 );
@@ -213,7 +222,7 @@ def migrate(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE sources ADD COLUMN bridge_last_seen_at TEXT")
     conn.executescript(SCHEMA)
     conn.execute(
-        "INSERT OR REPLACE INTO schema_meta(key, value) VALUES ('version', '3')"
+        "INSERT OR REPLACE INTO schema_meta(key, value) VALUES ('version', '4')"
     )
     from .settings import seed
     seed(conn)
