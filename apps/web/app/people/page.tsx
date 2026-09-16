@@ -31,7 +31,7 @@ export default function PeoplePage() {
   const indexing = enrichment.clustering_status === "indexing";
   const clustering = enrichment.clustering_status === "queued" || enrichment.clustering_status === "running";
   const enrichmentMessage = indexing
-    ? `${enrichment.embeddings_ready.toLocaleString()} of ${enrichment.total.toLocaleString()} faces indexed. Finish indexing before clustering.`
+    ? `${enrichment.embeddings_ready.toLocaleString()} of ${enrichment.total.toLocaleString()} faces indexed. This run will cover indexed faces; run clustering again when indexing finishes.`
     : clustering
       ? "Clustering is in progress. Suggestions will appear when the worker finishes."
       : enrichment.clustering_status === "completed_no_suggestions"
@@ -44,7 +44,7 @@ export default function PeoplePage() {
       <h1>People</h1>
       <p className="lead">Clusters are suggestions, not identities. Confirm only the groups that look right; your decisions survive future clustering runs.</p>
       <div className="card enrichmentCard"><strong>Face enrichment</strong><span className="muted">{enrichmentMessage}</span><span className="muted">{enrichment.embeddings_ready.toLocaleString()} embeddings ready · {enrichment.embeddings_pending.toLocaleString()} pending</span></div>
-      <button className="button" disabled={indexing || clustering || enrichment.total === 0} onClick={cluster}>{clustering ? "Clustering in progress…" : indexing ? "Waiting for face indexing…" : "Run clustering"}</button>
+      <button className="button" disabled={clustering || enrichment.embeddings_ready === 0} onClick={cluster}>{clustering ? "Clustering in progress…" : indexing ? "Cluster indexed faces" : "Run clustering"}</button>
       <p className="status" aria-live="polite">{message}</p>
       <h2>Suggestions</h2>
       <div className="cards">
