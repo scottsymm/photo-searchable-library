@@ -14,6 +14,10 @@ register_heif_opener()
 def image_thumbnail(path: str, max_dim: int = 512) -> bytes:
     with Image.open(path) as image:
         image.thumbnail((max_dim, max_dim))
+        if "A" in image.getbands() or image.info.get("transparency") is not None:
+            foreground = image.convert("RGBA")
+            background = Image.new("RGBA", foreground.size, (244, 241, 233, 255))
+            image = Image.alpha_composite(background, foreground)
         output = io.BytesIO()
         image.convert("RGB").save(output, "JPEG", quality=82, optimize=True)
         return output.getvalue()
