@@ -105,6 +105,7 @@ button.funnelStage:hover { border-color: var(--accent); }
 .sourceFacts { display: grid; gap: 4px; margin-bottom: 10px; }
 .thumbRow { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
 .contextValue { display: block; margin-bottom: 4px; font-size: 1.5rem; font-weight: 700; }
+.contextMeta { display: block; }
 .proportionBar { display: flex; height: 12px; margin-top: 10px; overflow: hidden; border-radius: 6px; background: var(--paper); }
 .proportionBar > span { display: block; height: 100%; }
 .nextStep { display: grid; gap: 6px; margin: 14px 0 16px; border-left: 3px solid var(--accent); padding: 10px 12px; background: #fce3c966; font-size: .88rem; line-height: 1.4; }
