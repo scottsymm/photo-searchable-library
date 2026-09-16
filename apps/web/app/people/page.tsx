@@ -8,6 +8,7 @@ export default function PeoplePage() {
   const [persons, setPersons] = useState<Person[]>([]);
   const [suggestions, setSuggestions] = useState<ClusterSuggestion[]>([]);
   const [showRejected, setShowRejected] = useState(false);
+  const [activeTab, setActiveTab] = useState<"suggestions" | "people">("suggestions");
   const [message, setMessage] = useState("");
   const [enrichment, setEnrichment] = useState<FaceEnrichment>({ total: 0, embeddings_ready: 0, embeddings_pending: 0, assets_processing: 0, clustering_status: "no_faces" });
 
@@ -48,18 +49,23 @@ export default function PeoplePage() {
       <h1>People</h1>
       <p className="lead">Clusters are suggestions, not identities. Confirm only the groups that look right; your decisions survive future clustering runs.</p>
       <div className="card enrichmentCard"><strong>Face enrichment</strong><span className="muted">{enrichmentMessage}</span><span className="muted">{enrichment.embeddings_ready.toLocaleString()} embeddings ready · {enrichment.embeddings_pending.toLocaleString()} pending</span>{processingAssets && <span className="muted">{enrichment.assets_processing.toLocaleString()} assets still processing</span>}</div>
-      <button className="button" disabled={clustering || enrichment.embeddings_ready === 0} onClick={cluster}>{clustering ? "Clustering in progress…" : indexing || processingAssets ? "Cluster indexed faces" : "Run clustering"}</button>
-      <p className="status" aria-live="polite">{message}</p>
-      <h2>Suggestions</h2>
-      <label><input type="checkbox" checked={showRejected} onChange={(event) => setShowRejected(event.target.checked)} /> Show rejected suggestions</label>
-      <div className="cards">
-        {suggestions.map((suggestion) => <SuggestionCard key={suggestion.id} suggestion={suggestion} onDone={reload} />)}
+      <div className="tabs" role="tablist" aria-label="People views">
+        <button className="tab" role="tab" aria-selected={activeTab === "suggestions"} onClick={() => setActiveTab("suggestions")}>Suggestions</button>
+        <button className="tab" role="tab" aria-selected={activeTab === "people"} onClick={() => setActiveTab("people")}>Named People</button>
       </div>
-      {suggestions.length === 0 && <p className="muted">{enrichment.clustering_status === "completed_no_suggestions" ? "No unreviewed clusters were found." : "No unreviewed clusters yet."}</p>}
-      <h2>Named people</h2>
-      <div className="cards">
-        {persons.map((person) => <PersonCard key={person.id} person={person} onSaved={reload} />)}
-      </div>
+      {activeTab === "suggestions" ? <section role="tabpanel" aria-label="Suggestions">
+        <button className="button" disabled={clustering || enrichment.embeddings_ready === 0} onClick={cluster}>{clustering ? "Clustering in progress…" : indexing || processingAssets ? "Cluster indexed faces" : "Run clustering"}</button>
+        <p className="status" aria-live="polite">{message}</p>
+        <label><input type="checkbox" checked={showRejected} onChange={(event) => setShowRejected(event.target.checked)} /> Show rejected suggestions</label>
+        <div className="cards">
+          {suggestions.map((suggestion) => <SuggestionCard key={suggestion.id} suggestion={suggestion} onDone={reload} />)}
+        </div>
+        {suggestions.length === 0 && <p className="muted">{enrichment.clustering_status === "completed_no_suggestions" ? "No unreviewed clusters were found." : "No unreviewed clusters yet."}</p>}
+      </section> : <section role="tabpanel" aria-label="Named People">
+        <div className="cards">
+          {persons.map((person) => <PersonCard key={person.id} person={person} onSaved={reload} />)}
+        </div>
+      </section>}
     </main>
   );
 }
