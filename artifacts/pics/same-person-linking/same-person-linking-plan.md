@@ -33,7 +33,7 @@
 - Modify: `packages/core/core/schema.py`
 - Create or modify: `packages/core/tests/test_schema.py`
 
-- [ ] Add this table to `SCHEMA` after `persons` and before tables that reference person identity:
+- [x] Add this table to `SCHEMA` after `persons` and before tables that reference person identity:
 
 ```sql
 CREATE TABLE IF NOT EXISTS person_aliases (
@@ -46,10 +46,10 @@ CREATE TABLE IF NOT EXISTS person_aliases (
 CREATE INDEX IF NOT EXISTS person_aliases_person_idx ON person_aliases(person_id);
 ```
 
-- [ ] Change the value written by `migrate()` from schema version `'3'` to `'4'`; do not remove or rewrite any existing tables or rows.
-- [ ] Add a migration test that creates an in-memory catalog, runs `migrate(conn)`, asserts `person_aliases` exists with `id`, `person_id`, `alias`, and `created_at`, and asserts `schema_meta.version == '4'`.
-- [ ] Add a repeatability test that inserts a person and alias, runs `migrate(conn)` a second time, and verifies the alias remains present and only one `person_aliases` table exists.
-- [ ] Verify:
+- [x] Change the value written by `migrate()` from schema version `'3'` to `'4'`; do not remove or rewrite any existing tables or rows.
+- [x] Add a migration test that creates an in-memory catalog, runs `migrate(conn)`, asserts `person_aliases` exists with `id`, `person_id`, `alias`, and `created_at`, and asserts `schema_meta.version == '4'`.
+- [x] Add a repeatability test that inserts a person and alias, runs `migrate(conn)` a second time, and verifies the alias remains present and only one `person_aliases` table exists.
+- [x] Verify:
 
 ```bash
 uv run --project packages/core pytest packages/core/tests

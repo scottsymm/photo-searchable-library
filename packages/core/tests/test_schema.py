@@ -63,3 +63,29 @@ def test_migrate_adds_bridge_presence_columns(tmp_path):
     columns = {row["name"] for row in conn.execute("PRAGMA table_info(sources)")}
     conn.close()
     assert {"bridge_status", "bridge_last_seen_at"} <= columns
+
+
+def test_migrate_creates_aliases_and_version_four(tmp_path):
+    conn = connect(str(tmp_path / "catalog.db"))
+    migrate(conn)
+
+    columns = {row["name"] for row in conn.execute("PRAGMA table_info(person_aliases)")}
+    version = conn.execute("SELECT value FROM schema_meta WHERE key = 'version'").fetchone()[0]
+    conn.close()
+
+    assert {"id", "person_id", "alias", "created_at"} <= columns
+    assert version == "4"
+
+
+def test_migrate_preserves_aliases_when_repeated(tmp_path):
+    conn = connect(str(tmp_path / "catalog.db"))
+    migrate(conn)
+    conn.execute("INSERT INTO persons(id, name) VALUES (1, 'Sam')")
+    conn.execute("INSERT INTO person_aliases(person_id, alias) VALUES (1, 'Samuel')")
+    conn.commit()
+
+    migrate(conn)
+
+    rows = conn.execute("SELECT person_id, alias FROM person_aliases").fetchall()
+    conn.close()
+    assert [(row["person_id"], row["alias"]) for row in rows] == [(1, "Samuel")]
