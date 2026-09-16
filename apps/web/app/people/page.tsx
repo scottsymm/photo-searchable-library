@@ -78,12 +78,37 @@ function SuggestionCard({ suggestion, onDone }: { suggestion: ClusterSuggestion;
   const rejected = suggestion.status === "rejected";
   async function confirm() {
     setBusy(true);
-    await confirmSuggestion(suggestion.id, selectedPerson ? { person_id: selectedPerson.id } : { name });
-    await onDone();
-    setBusy(false);
+    try {
+      await confirmSuggestion(suggestion.id, selectedPerson ? { person_id: selectedPerson.id } : { name });
+      await onDone();
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Could not confirm cluster");
+    } finally {
+      setBusy(false);
+    }
   }
-  async function reject() { setBusy(true); await rejectSuggestion(suggestion.id); await onDone(); setBusy(false); }
-  async function restore() { setBusy(true); await restoreSuggestion(suggestion.id); await onDone(); setBusy(false); }
+  async function reject() {
+    setBusy(true);
+    try {
+      await rejectSuggestion(suggestion.id);
+      await onDone();
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Could not reject cluster");
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function restore() {
+    setBusy(true);
+    try {
+      await restoreSuggestion(suggestion.id);
+      await onDone();
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Could not restore cluster");
+    } finally {
+      setBusy(false);
+    }
+  }
   return <div className="card"><strong>{suggestion.confidence} · {suggestion.face_count} faces</strong>{rejected && <span className="muted">Rejected</span>}<div className="faceRow">{suggestion.faces.map((face) => <img key={face.face_id} src={`${api}${face.crop_url}`} alt="Face suggestion" />)}</div>{!rejected && (selectedPerson ? <div className="selectedPerson"><PersonSummary person={selectedPerson} /><button className="button secondary" disabled={busy} onClick={() => setSelectedPerson(null)}>Choose another</button></div> : <><input className="searchInput" value={name} placeholder="Name this person" onChange={(event) => setName(event.target.value)} /><PersonPicker onSelect={setSelectedPerson} /></>)}<div style={{ display: "flex", gap: 8, marginTop: 10 }}>{rejected ? <button className="button" disabled={busy} onClick={restore}>Review again</button> : <><button className="button" disabled={busy || (!name.trim() && !selectedPerson)} onClick={confirm}>Confirm</button><button className="button secondary" disabled={busy} onClick={reject}>Reject</button></>}</div></div>;
 }
 
@@ -95,16 +120,56 @@ function PersonCard({ person, onSaved }: { person: Person; onSaved: () => void }
   const [mergeFace, setMergeFace] = useState<number | undefined>(person.prototype_face_id ?? undefined);
   const [busy, setBusy] = useState(false);
   const api = process.env.NEXT_PUBLIC_PICS_API_URL ?? "http://localhost:8000";
-  async function saveName() { setBusy(true); await renamePerson(person.id, name); await onSaved(); setBusy(false); }
-  async function saveAlias() { if (!alias.trim()) return; setBusy(true); await addAlias(person.id, alias); setAlias(""); await onSaved(); setBusy(false); }
-  async function removePersonAlias(aliasId: number) { setBusy(true); await removeAlias(person.id, aliasId); await onSaved(); setBusy(false); }
+  function reportError(error: unknown, fallback: string) {
+    window.alert(error instanceof Error ? error.message : fallback);
+  }
+  async function saveName() {
+    setBusy(true);
+    try {
+      await renamePerson(person.id, name);
+      await onSaved();
+    } catch (error) {
+      reportError(error, "Rename failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function saveAlias() {
+    if (!alias.trim()) return;
+    setBusy(true);
+    try {
+      await addAlias(person.id, alias);
+      setAlias("");
+      await onSaved();
+    } catch (error) {
+      reportError(error, "Could not add alias");
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function removePersonAlias(aliasId: number) {
+    setBusy(true);
+    try {
+      await removeAlias(person.id, aliasId);
+      await onSaved();
+    } catch (error) {
+      reportError(error, "Could not remove alias");
+    } finally {
+      setBusy(false);
+    }
+  }
   async function merge() {
     if (!mergeSource || !window.confirm(`Merge ${mergeSource.name || "unnamed person"} into ${person.name || "unnamed person"}?`)) return;
     setBusy(true);
-    await mergePersons(person.id, mergeSource.id, { name: mergeName, representative_face_id: mergeFace ?? null });
-    await onSaved();
-    setMergeSource(null);
-    setBusy(false);
+    try {
+      await mergePersons(person.id, mergeSource.id, { name: mergeName, representative_face_id: mergeFace ?? null });
+      await onSaved();
+      setMergeSource(null);
+    } catch (error) {
+      reportError(error, "Could not merge people");
+    } finally {
+      setBusy(false);
+    }
   }
   return <div className="card personCard"><PersonSummary person={person} /><strong>{person.face_count} face{person.face_count === 1 ? "" : "s"}</strong><input className="searchInput" value={name} placeholder="Name this person" onChange={(event) => setName(event.target.value)} /><button className="button" style={{ marginTop: 10 }} disabled={busy || !name.trim()} onClick={saveName}>Save name</button><div className="aliasList">{person.aliases.map((item) => <span className="aliasChip" key={item.id}>{item.alias}<button aria-label={`Remove alias ${item.alias}`} disabled={busy} onClick={() => removePersonAlias(item.id)}>×</button></span>)}</div><div className="aliasRow"><input className="searchInput" value={alias} placeholder="Add an alias" onChange={(event) => setAlias(event.target.value)} /><button className="button secondary" disabled={busy || !alias.trim()} onClick={saveAlias}>Add alias</button></div>{mergeSource ? <div className="mergePanel"><strong>Merge with {mergeSource.name || "unnamed person"}</strong><input className="searchInput" value={mergeName} onChange={(event) => setMergeName(event.target.value)} aria-label="Final person name" /><div className="representativeChoices"><label><input type="radio" checked={mergeFace === undefined} onChange={() => setMergeFace(undefined)} /> No representative</label>{person.representative_url && <label><input type="radio" checked={mergeFace === person.prototype_face_id} onChange={() => setMergeFace(person.prototype_face_id ?? undefined)} /> Keep current face</label>}{mergeSource.representative_url && <label><input type="radio" checked={mergeFace === mergeSource.prototype_face_id} onChange={() => setMergeFace(mergeSource.prototype_face_id ?? undefined)} /> Use other person's face</label>}</div><button className="button" disabled={busy || !mergeName.trim()} onClick={merge}>Merge people</button><button className="button secondary" disabled={busy} onClick={() => setMergeSource(null)}>Cancel</button></div> : <PersonPicker excludeId={person.id} onSelect={(selected) => { setMergeSource(selected); setMergeName(person.name); setMergeFace(person.prototype_face_id ?? selected.prototype_face_id ?? undefined); }} />}</div>;
 }
