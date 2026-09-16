@@ -37,6 +37,7 @@ export interface FaceEnrichment {
   total: number;
   embeddings_ready: number;
   embeddings_pending: number;
+  assets_processing: number;
   clustering_status: "no_faces" | "indexing" | "ready" | "queued" | "running" | "completed_no_suggestions";
 }
 

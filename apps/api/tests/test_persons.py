@@ -23,6 +23,7 @@ def test_people_reports_face_enrichment_state(client):
         "total": 0,
         "embeddings_ready": 0,
         "embeddings_pending": 0,
+        "assets_processing": 0,
         "clustering_status": "no_faces",
     }
 

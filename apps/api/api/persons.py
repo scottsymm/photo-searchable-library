@@ -41,6 +41,12 @@ def _crop_url(face_id: int) -> str:
 def _enrichment(conn):
     total = conn.execute("SELECT COUNT(*) FROM faces").fetchone()[0]
     ready = conn.execute("SELECT COUNT(*) FROM face_embeds").fetchone()[0]
+    assets_processing = conn.execute(
+        """SELECT COUNT(*) FROM assets a
+        WHERE a.deleted = 0 AND NOT EXISTS (
+          SELECT 1 FROM content_embeds e WHERE e.asset_id = a.id
+        )"""
+    ).fetchone()[0]
     job = conn.execute("SELECT status FROM jobs WHERE kind = 'cluster_faces' ORDER BY id DESC LIMIT 1").fetchone()
     run = conn.execute("SELECT id, status FROM clustering_runs ORDER BY id DESC LIMIT 1").fetchone()
     if job is not None and job["status"] in ("queued", "working"):
@@ -55,7 +61,7 @@ def _enrichment(conn):
         status = "ready" if conn.execute("SELECT COUNT(*) FROM cluster_suggestions WHERE run_id = ?", (run["id"],)).fetchone()[0] > 0 else "completed_no_suggestions"
     else:
         status = "ready"
-    return {"total": total, "embeddings_ready": ready, "embeddings_pending": max(0, total - ready), "clustering_status": status}
+    return {"total": total, "embeddings_ready": ready, "embeddings_pending": max(0, total - ready), "assets_processing": assets_processing, "clustering_status": status}
 
 
 def _suggestion(conn, suggestion_id: int):
