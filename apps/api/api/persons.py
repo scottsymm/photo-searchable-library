@@ -15,6 +15,10 @@ router = APIRouter()
 LIBRARY_ROOT = Path(os.environ.get("PICS_LIBRARY", "library")).resolve()
 
 
+def _escape_like(value: str) -> str:
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
 class RenameRequest(BaseModel):
     name: str = Field(min_length=1, max_length=120)
 
@@ -156,15 +160,15 @@ def search_persons(q: str = "", conn=Depends(get_conn)):
     query = q.strip()
     if not query:
         return {"persons": []}
-    pattern = f"%{query}%"
+    pattern = f"%{_escape_like(query)}%"
     people = conn.execute(
         """SELECT persons.id, persons.name, persons.status,
         persons.prototype_face_id, COUNT(DISTINCT person_faces.face_id) AS face_count
         FROM persons
         LEFT JOIN person_faces ON person_faces.person_id = persons.id
         LEFT JOIN person_aliases ON person_aliases.person_id = persons.id
-        WHERE persons.name LIKE ? COLLATE NOCASE
-           OR person_aliases.alias LIKE ? COLLATE NOCASE
+         WHERE persons.name LIKE ? COLLATE NOCASE ESCAPE '\\'
+            OR person_aliases.alias LIKE ? COLLATE NOCASE ESCAPE '\\'
         GROUP BY persons.id
         ORDER BY face_count DESC, persons.id
         LIMIT 20""",

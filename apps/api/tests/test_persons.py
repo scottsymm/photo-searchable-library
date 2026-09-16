@@ -140,6 +140,26 @@ def test_person_search_matches_aliases_and_is_case_insensitive(client):
     assert client.get("/persons/search", params={"q": "   "}).json() == {"persons": []}
 
 
+def test_person_search_escapes_like_wildcards(client):
+    from api.deps import get_conn
+
+    connection_generator = client.app.dependency_overrides[get_conn]()
+    conn = next(connection_generator)
+    try:
+        conn.execute("INSERT INTO persons(id, name) VALUES (1, '100% real')")
+        conn.execute("INSERT INTO persons(id, name) VALUES (2, '1000 real')")
+        conn.execute("INSERT INTO persons(id, name) VALUES (3, '100_real')")
+        conn.commit()
+    finally:
+        connection_generator.close()
+
+    percent_response = client.get("/persons/search", params={"q": "%"})
+    underscore_response = client.get("/persons/search", params={"q": "_"})
+
+    assert [person["id"] for person in percent_response.json()["persons"]] == [1]
+    assert [person["id"] for person in underscore_response.json()["persons"]] == [3]
+
+
 def test_people_response_includes_aliases_and_representative(client):
     from api.deps import get_conn
 
