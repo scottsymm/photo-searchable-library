@@ -251,7 +251,7 @@ Expected: TypeScript and production build pass.
 **Files:**
 - No source changes; verification only.
 
-- [ ] Run all Python tests:
+- [x] Run all Python tests:
 
 ```bash
 uv run --project packages/core pytest packages/core/tests
@@ -259,7 +259,7 @@ uv run --project apps/api pytest apps/api/tests
 uv run --project services/worker pytest services/worker/tests
 ```
 
-- [ ] Run web checks and tests:
+- [x] Run web checks and tests:
 
 ```bash
 pnpm --filter web check
@@ -277,10 +277,10 @@ pnpm --filter web build
 
 ## Verification Summary
 
-- [ ] Core tests pass: `uv run --project packages/core pytest packages/core/tests`
-- [ ] API tests pass: `uv run --project apps/api pytest apps/api/tests`
-- [ ] Worker tests pass: `uv run --project services/worker pytest services/worker/tests`
-- [ ] Web typecheck passes: `pnpm --filter web check`
-- [ ] Web tests pass: `pnpm --filter web test`
-- [ ] Web production build passes: `pnpm --filter web build`
+- [x] Core tests pass: `uv run --project packages/core pytest packages/core/tests`
+- [x] API tests pass: `uv run --project apps/api pytest apps/api/tests`
+- [x] Worker tests pass: `uv run --project services/worker pytest services/worker/tests`
+- [x] Web typecheck passes: `pnpm --filter web check`
+- [x] Web tests pass: `pnpm --filter web test`
+- [x] Web production build passes: `pnpm --filter web build`
 - [ ] End-to-end flow confirms existing-person linking, aliases, merge choices, alias photo search, and persistence across re-clustering.
