@@ -51,6 +51,27 @@ def _crop_url(face_id: int) -> str:
     return f"/persons/faces/{face_id}/crop"
 
 
+def _repair_prototype(conn, person_id: int) -> None:
+    person = conn.execute(
+        "SELECT prototype_face_id FROM persons WHERE id = ?", (person_id,)
+    ).fetchone()
+    if person is None or person["prototype_face_id"] is None:
+        return
+    owned = conn.execute(
+        "SELECT 1 FROM person_faces WHERE person_id = ? AND face_id = ?",
+        (person_id, person["prototype_face_id"]),
+    ).fetchone()
+    if owned is None:
+        replacement = conn.execute(
+            "SELECT face_id FROM person_faces WHERE person_id = ? ORDER BY face_id LIMIT 1",
+            (person_id,),
+        ).fetchone()
+        conn.execute(
+            "UPDATE persons SET prototype_face_id = ? WHERE id = ?",
+            (replacement["face_id"] if replacement else None, person_id),
+        )
+
+
 def _person_payload(conn, row):
     aliases = conn.execute(
         "SELECT id, alias FROM person_aliases WHERE person_id = ? ORDER BY id",
@@ -277,10 +298,27 @@ def assign_face(person_id: int, face_id: int, conn=Depends(get_conn)):
         raise HTTPException(status_code=404, detail="person not found")
     if conn.execute("SELECT id FROM faces WHERE id = ?", (face_id,)).fetchone() is None:
         raise HTTPException(status_code=404, detail="face not found")
+    previous_owner = conn.execute(
+        "SELECT person_id FROM person_faces WHERE face_id = ?", (face_id,)
+    ).fetchone()
     conn.execute(
         "INSERT OR REPLACE INTO person_faces(person_id, face_id, source) VALUES (?, ?, 'manual')",
         (person_id, face_id),
     )
+    if previous_owner is not None and previous_owner["person_id"] != person_id:
+        previous_prototype = conn.execute(
+            "SELECT prototype_face_id FROM persons WHERE id = ?",
+            (previous_owner["person_id"],),
+        ).fetchone()
+        target = conn.execute(
+            "SELECT prototype_face_id FROM persons WHERE id = ?", (person_id,)
+        ).fetchone()
+        if previous_prototype["prototype_face_id"] == face_id and target["prototype_face_id"] is None:
+            conn.execute(
+                "UPDATE persons SET prototype_face_id = ? WHERE id = ?",
+                (face_id, person_id),
+            )
+        _repair_prototype(conn, previous_owner["person_id"])
     conn.commit()
     return {"ok": True}
 
@@ -289,6 +327,9 @@ def assign_face(person_id: int, face_id: int, conn=Depends(get_conn)):
 def split(person_id: int, request: SplitRequest, conn=Depends(get_conn)):
     if conn.execute("SELECT id FROM persons WHERE id = ?", (person_id,)).fetchone() is None:
         raise HTTPException(status_code=404, detail="person not found")
+    source = conn.execute(
+        "SELECT prototype_face_id FROM persons WHERE id = ?", (person_id,)
+    ).fetchone()
     person = conn.execute(
         "INSERT INTO persons(name, status) VALUES (?, 'new') RETURNING id", (request.name or "",)
     ).fetchone()
@@ -299,6 +340,12 @@ def split(person_id: int, request: SplitRequest, conn=Depends(get_conn)):
             "INSERT OR IGNORE INTO person_faces(person_id, face_id, source) VALUES (?, ?, 'manual-split')",
             (new_id, face_id),
         )
+    if source["prototype_face_id"] in request.face_ids:
+        conn.execute(
+            "UPDATE persons SET prototype_face_id = ? WHERE id = ?",
+            (source["prototype_face_id"], new_id),
+        )
+    _repair_prototype(conn, person_id)
     conn.commit()
     return {"ok": True, "person_id": new_id}
 

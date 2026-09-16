@@ -108,6 +108,7 @@ def test_rejected_suggestion_can_be_restored(client):
     finally:
         connection_generator.close()
 
+
     response = client.post("/persons/suggestions/1/restore")
 
     assert response.status_code == 200
@@ -119,6 +120,36 @@ def test_rejected_suggestion_can_be_restored(client):
     finally:
         connection_generator.close()
 
+
+def test_split_moves_representative_to_new_person_and_repairs_source(client):
+    from api.deps import get_conn
+
+    connection_generator = client.app.dependency_overrides[get_conn]()
+    conn = next(connection_generator)
+    try:
+        for face_id in (1, 2):
+            conn.execute("INSERT INTO assets(id, path, sha256, size_bytes, mime) VALUES (?, ?, ?, 1, 'image/jpeg')", (face_id, f"/tmp/{face_id}.jpg", str(face_id) * 64))
+            conn.execute("INSERT INTO faces(id, asset_id, bbox) VALUES (?, ?, '[]')", (face_id, face_id))
+        conn.execute("INSERT INTO persons(id, name, prototype_face_id) VALUES (1, 'One', 1)")
+        conn.execute("INSERT INTO person_faces(person_id, face_id, source) VALUES (1, 1, 'manual')")
+        conn.execute("INSERT INTO person_faces(person_id, face_id, source) VALUES (1, 2, 'manual')")
+        conn.commit()
+    finally:
+        connection_generator.close()
+
+    response = client.post("/persons/1/split", json={"face_ids": [1], "name": "Separate"})
+
+    assert response.status_code == 200
+    new_id = response.json()["person_id"]
+    connection_generator = client.app.dependency_overrides[get_conn]()
+    conn = next(connection_generator)
+    try:
+        source = conn.execute("SELECT prototype_face_id FROM persons WHERE id = 1").fetchone()
+        new_person = conn.execute("SELECT prototype_face_id FROM persons WHERE id = ?", (new_id,)).fetchone()
+        assert source["prototype_face_id"] == 2
+        assert new_person["prototype_face_id"] == 1
+    finally:
+        connection_generator.close()
 
 def test_person_search_matches_aliases_and_is_case_insensitive(client):
     from api.deps import get_conn
