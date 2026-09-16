@@ -57,11 +57,10 @@ def _failed_job_counts(conn: sqlite3.Connection) -> dict[str, int]:
     counts: dict[str, int] = {}
     for row in rows:
         paths = json.loads(row["params"] or "{}").get("paths", [])
-        if not paths:
-            continue
-        kind = classify_path(paths[0])
-        if kind is not None:
-            counts[kind] = counts.get(kind, 0) + 1
+        for path in paths:
+            kind = classify_path(path)
+            if kind is not None:
+                counts[kind] = counts.get(kind, 0) + 1
     return counts
 
 

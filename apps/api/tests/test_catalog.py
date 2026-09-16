@@ -110,6 +110,29 @@ def test_processing_counts_active_job_paths(client, tmp_path, monkeypatch):
     assert apple["stages"]["failed_or_blocked"] == 1
 
 
+def test_failed_job_counts_each_path_by_source(client, tmp_path, monkeypatch):
+    library = tmp_path / "library"
+    watch_root = tmp_path / "watch"
+    (library / "imports").mkdir(parents=True)
+    watch_root.mkdir()
+    monkeypatch.setattr("core.sources.LIBRARY", library)
+    monkeypatch.setattr("core.sources.WATCH_ROOT", watch_root)
+    upload_paths = [str((library / "imports" / f"{index}.jpg").resolve()) for index in range(2)]
+    mounted_path = str((watch_root / "mounted.jpg").resolve())
+    generator, conn = _db(client)
+    try:
+        conn.execute(
+            "INSERT INTO jobs(kind, status, params) VALUES ('scan', 'error', ?)",
+            (json.dumps({"paths": [*upload_paths, mounted_path]}),),
+        )
+        conn.commit()
+    finally:
+        generator.close()
+    data = _get(client)
+    assert _source(data, "uploads")["stages"]["failed_or_blocked"] == 2
+    assert _source(data, "mounted_folder")["stages"]["failed_or_blocked"] == 1
+
+
 def test_readiness_not_configured_by_default(client):
     assert _source(_get(client), "apple_photos")["readiness"] == "not_configured"
 
