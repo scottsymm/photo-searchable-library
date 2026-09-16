@@ -178,6 +178,12 @@ def _context(conn: sqlite3.Connection, inventory: dict) -> dict:
     ).fetchall()
     faces_total = conn.execute("SELECT COUNT(*) FROM faces").fetchone()[0]
     face_embeds = conn.execute("SELECT COUNT(*) FROM face_embeds").fetchone()[0]
+    assets_processing = conn.execute(
+        """SELECT COUNT(*) FROM assets a
+        WHERE a.deleted = 0 AND NOT EXISTS (
+          SELECT 1 FROM content_embeds e WHERE e.asset_id = a.id
+        )"""
+    ).fetchone()[0]
     assigned = conn.execute("SELECT COUNT(DISTINCT face_id) FROM person_faces").fetchone()[0]
     cluster_job = conn.execute(
         "SELECT status FROM jobs WHERE kind = 'cluster_faces' ORDER BY id DESC LIMIT 1"
@@ -202,7 +208,7 @@ def _context(conn: sqlite3.Connection, inventory: dict) -> dict:
     return {
         "recent_imports": [dict(row) for row in recent],
         "photos_libraries": inventory["photos_libraries"],
-        "faces": {"total": faces_total, "assigned": assigned, "unassigned": faces_total - assigned, "embeddings_ready": face_embeds, "embeddings_pending": max(0, faces_total - face_embeds), "clustering_status": clustering_status},
+        "faces": {"total": faces_total, "assigned": assigned, "unassigned": faces_total - assigned, "embeddings_ready": face_embeds, "embeddings_pending": max(0, faces_total - face_embeds), "assets_processing": assets_processing, "clustering_status": clustering_status},
         "places": {"located": located, "unlocated": total_assets - located},
     }
 

@@ -163,7 +163,7 @@ export interface CatalogOverview {
       imported_at: string | null;
       taken_at: string | null;
     }[];
-    faces: { total: number; assigned: number; unassigned: number; embeddings_ready: number; embeddings_pending: number; clustering_status: FaceEnrichment["clustering_status"] };
+    faces: { total: number; assigned: number; unassigned: number; embeddings_ready: number; embeddings_pending: number; assets_processing: number; clustering_status: FaceEnrichment["clustering_status"] };
     places: { located: number; unlocated: number };
   };
 }

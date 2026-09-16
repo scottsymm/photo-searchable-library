@@ -234,7 +234,7 @@ def test_context_blocks(client):
     finally:
         generator.close()
     data = _get(client)
-    assert data["context"]["faces"] == {"total": 2, "assigned": 1, "unassigned": 1, "embeddings_ready": 0, "embeddings_pending": 2, "clustering_status": "indexing"}
+    assert data["context"]["faces"] == {"total": 2, "assigned": 1, "unassigned": 1, "embeddings_ready": 0, "embeddings_pending": 2, "assets_processing": 0, "clustering_status": "indexing"}
     assert data["context"]["places"] == {"located": 1, "unlocated": 1}
     recent = data["context"]["recent_imports"]
     assert recent[0]["id"] == second
