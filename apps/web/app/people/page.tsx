@@ -1,19 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { addAlias, confirmSuggestion, mergePersons, people, queueClustering, rejectSuggestion, removeAlias, renamePerson, searchPersons } from "../../lib/api";
+import { addAlias, confirmSuggestion, mergePersons, people, queueClustering, rejectSuggestion, removeAlias, renamePerson, restoreSuggestion, searchPersons } from "../../lib/api";
 import type { ClusterSuggestion, FaceEnrichment, Person } from "../../types";
 
 export default function PeoplePage() {
   const [persons, setPersons] = useState<Person[]>([]);
   const [suggestions, setSuggestions] = useState<ClusterSuggestion[]>([]);
+  const [showRejected, setShowRejected] = useState(false);
   const [message, setMessage] = useState("");
   const [enrichment, setEnrichment] = useState<FaceEnrichment>({ total: 0, embeddings_ready: 0, embeddings_pending: 0, assets_processing: 0, clustering_status: "no_faces" });
 
   async function reload() {
     const result = await people().catch(() => ({ persons: [], suggestions: [], enrichment: { total: 0, embeddings_ready: 0, embeddings_pending: 0, assets_processing: 0, clustering_status: "no_faces" as const } }));
     setPersons(result.persons);
-    setSuggestions(result.suggestions.filter((item) => item.status === "unreviewed"));
+    setSuggestions(result.suggestions.filter((item) => item.status === "unreviewed" || (showRejected && item.status === "rejected")));
     setEnrichment(result.enrichment);
   }
 
@@ -21,7 +22,7 @@ export default function PeoplePage() {
     void reload();
     const timer = window.setInterval(() => void reload(), 3000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [showRejected]);
 
   async function cluster() {
     await queueClustering();
@@ -50,6 +51,7 @@ export default function PeoplePage() {
       <button className="button" disabled={clustering || enrichment.embeddings_ready === 0} onClick={cluster}>{clustering ? "Clustering in progress…" : indexing || processingAssets ? "Cluster indexed faces" : "Run clustering"}</button>
       <p className="status" aria-live="polite">{message}</p>
       <h2>Suggestions</h2>
+      <label><input type="checkbox" checked={showRejected} onChange={(event) => setShowRejected(event.target.checked)} /> Show rejected suggestions</label>
       <div className="cards">
         {suggestions.map((suggestion) => <SuggestionCard key={suggestion.id} suggestion={suggestion} onDone={reload} />)}
       </div>
@@ -67,6 +69,7 @@ function SuggestionCard({ suggestion, onDone }: { suggestion: ClusterSuggestion;
   const [name, setName] = useState("");
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [busy, setBusy] = useState(false);
+  const rejected = suggestion.status === "rejected";
   async function confirm() {
     setBusy(true);
     await confirmSuggestion(suggestion.id, selectedPerson ? { person_id: selectedPerson.id } : { name });
@@ -74,7 +77,8 @@ function SuggestionCard({ suggestion, onDone }: { suggestion: ClusterSuggestion;
     setBusy(false);
   }
   async function reject() { setBusy(true); await rejectSuggestion(suggestion.id); await onDone(); setBusy(false); }
-  return <div className="card"><strong>{suggestion.confidence} · {suggestion.face_count} faces</strong><div className="faceRow">{suggestion.faces.map((face) => <img key={face.face_id} src={`${api}${face.crop_url}`} alt="Face suggestion" />)}</div>{selectedPerson ? <div className="selectedPerson"><PersonSummary person={selectedPerson} /><button className="button secondary" disabled={busy} onClick={() => setSelectedPerson(null)}>Choose another</button></div> : <><input className="searchInput" value={name} placeholder="Name this person" onChange={(event) => setName(event.target.value)} /><PersonPicker onSelect={setSelectedPerson} /></>}<div style={{ display: "flex", gap: 8, marginTop: 10 }}><button className="button" disabled={busy || (!name.trim() && !selectedPerson)} onClick={confirm}>Confirm</button><button className="button secondary" disabled={busy} onClick={reject}>Reject</button></div></div>;
+  async function restore() { setBusy(true); await restoreSuggestion(suggestion.id); await onDone(); setBusy(false); }
+  return <div className="card"><strong>{suggestion.confidence} · {suggestion.face_count} faces</strong>{rejected && <span className="muted">Rejected</span>}<div className="faceRow">{suggestion.faces.map((face) => <img key={face.face_id} src={`${api}${face.crop_url}`} alt="Face suggestion" />)}</div>{!rejected && (selectedPerson ? <div className="selectedPerson"><PersonSummary person={selectedPerson} /><button className="button secondary" disabled={busy} onClick={() => setSelectedPerson(null)}>Choose another</button></div> : <><input className="searchInput" value={name} placeholder="Name this person" onChange={(event) => setName(event.target.value)} /><PersonPicker onSelect={setSelectedPerson} /></>)}<div style={{ display: "flex", gap: 8, marginTop: 10 }}>{rejected ? <button className="button" disabled={busy} onClick={restore}>Review again</button> : <><button className="button" disabled={busy || (!name.trim() && !selectedPerson)} onClick={confirm}>Confirm</button><button className="button secondary" disabled={busy} onClick={reject}>Reject</button></>}</div></div>;
 }
 
 function PersonCard({ person, onSaved }: { person: Person; onSaved: () => void }) {

@@ -91,6 +91,11 @@ export async function rejectSuggestion(id: number): Promise<void> {
   if (!response.ok) throw new Error("Could not reject cluster");
 }
 
+export async function restoreSuggestion(id: number): Promise<void> {
+  const response = await fetch(apiUrl(`/persons/suggestions/${id}/restore`), { method: "POST" });
+  if (!response.ok) throw new Error("Could not restore cluster");
+}
+
 export async function adminStatus(): Promise<AdminStatus> {
   const response = await fetch(apiUrl("/admin/status"), { cache: "no-store" });
   if (!response.ok) throw new Error("Status request failed");

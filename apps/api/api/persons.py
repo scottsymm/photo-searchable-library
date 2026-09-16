@@ -117,10 +117,16 @@ def list_persons(conn=Depends(get_conn)):
             FROM face_assignments assignments
             JOIN faces ON faces.id = assignments.face_id
             WHERE assignments.suggestion_id = ?
+              AND NOT EXISTS (
+                  SELECT 1 FROM person_faces
+                  WHERE person_faces.face_id = assignments.face_id
+              )
             ORDER BY assignments.distance IS NULL, assignments.distance
             LIMIT 5""",
             (row["id"],),
         ).fetchall()
+        if not face_rows:
+            continue
         suggestions.append(
             {
                 **dict(row),
@@ -243,6 +249,20 @@ def reject(suggestion_id: int, conn=Depends(get_conn)):
     _suggestion(conn, suggestion_id)
     conn.execute("UPDATE cluster_suggestions SET status = 'rejected' WHERE id = ?", (suggestion_id,))
     conn.execute("UPDATE face_assignments SET status = 'rejected' WHERE suggestion_id = ?", (suggestion_id,))
+    conn.commit()
+    return {"ok": True}
+
+
+@router.post("/suggestions/{suggestion_id}/restore")
+def restore(suggestion_id: int, conn=Depends(get_conn)):
+    suggestion = _suggestion(conn, suggestion_id)
+    if suggestion["status"] != "rejected":
+        raise HTTPException(status_code=409, detail="only rejected suggestions can be restored")
+    conn.execute("UPDATE cluster_suggestions SET status = 'unreviewed' WHERE id = ?", (suggestion_id,))
+    conn.execute(
+        "UPDATE face_assignments SET status = 'suggested' WHERE suggestion_id = ?",
+        (suggestion_id,),
+    )
     conn.commit()
     return {"ok": True}
 

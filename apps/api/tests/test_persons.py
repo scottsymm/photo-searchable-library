@@ -93,6 +93,33 @@ def test_confirm_suggestion_can_link_to_existing_person(client):
         connection_generator.close()
 
 
+def test_rejected_suggestion_can_be_restored(client):
+    from api.deps import get_conn
+
+    connection_generator = client.app.dependency_overrides[get_conn]()
+    conn = next(connection_generator)
+    try:
+        conn.execute("INSERT INTO assets(id, path, sha256, size_bytes, mime) VALUES (1, '/tmp/a.jpg', ?, 1, 'image/jpeg')", ("a" * 64,))
+        conn.execute("INSERT INTO faces(id, asset_id, bbox) VALUES (1, 1, '[]')")
+        conn.execute("INSERT INTO clustering_runs(id, model, model_version, algorithm, metric, eps, min_samples, status) VALUES (1, 'test', '1', 'dbscan', 'cosine', .3, 3, 'completed')")
+        conn.execute("INSERT INTO cluster_suggestions(id, run_id, cluster_key, representative_face_id, face_count, confidence, status) VALUES (1, 1, 0, 1, 1, 'high', 'rejected')")
+        conn.execute("INSERT INTO face_assignments(run_id, face_id, suggestion_id, distance, status) VALUES (1, 1, 1, .1, 'rejected')")
+        conn.commit()
+    finally:
+        connection_generator.close()
+
+    response = client.post("/persons/suggestions/1/restore")
+
+    assert response.status_code == 200
+    connection_generator = client.app.dependency_overrides[get_conn]()
+    conn = next(connection_generator)
+    try:
+        assert conn.execute("SELECT status FROM cluster_suggestions WHERE id = 1").fetchone()[0] == "unreviewed"
+        assert conn.execute("SELECT status FROM face_assignments WHERE suggestion_id = 1").fetchone()[0] == "suggested"
+    finally:
+        connection_generator.close()
+
+
 def test_person_search_matches_aliases_and_is_case_insensitive(client):
     from api.deps import get_conn
 
