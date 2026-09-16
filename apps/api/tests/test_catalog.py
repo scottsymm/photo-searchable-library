@@ -133,6 +133,33 @@ def test_failed_job_counts_each_path_by_source(client, tmp_path, monkeypatch):
     assert _source(data, "mounted_folder")["stages"]["failed_or_blocked"] == 1
 
 
+def test_failed_job_counts_only_current_unresolved_paths(client, tmp_path, monkeypatch):
+    library = tmp_path / "library"
+    (library / "imports").mkdir(parents=True)
+    monkeypatch.setattr("core.sources.LIBRARY", library)
+    paths = [str((library / "imports" / f"{name}.jpg").resolve()) for name in ("repeated", "active", "done", "unresolved")]
+    generator, conn = _db(client)
+    try:
+        for _ in range(2):
+            conn.execute(
+                "INSERT INTO jobs(kind, status, params) VALUES ('scan', 'error', ?)",
+                (json.dumps({"paths": [paths[0]]}),),
+            )
+        conn.execute(
+            "INSERT INTO jobs(kind, status, params) VALUES ('scan', 'error', ?), ('scan', 'queued', ?), ('scan', 'error', ?)",
+            tuple(json.dumps({"paths": [path]}) for path in (paths[1], paths[1], paths[2])),
+        )
+        conn.execute(
+            "INSERT INTO jobs(kind, status, params) VALUES ('scan', 'done', ?), ('scan', 'error', ?)",
+            tuple(json.dumps({"paths": [path]}) for path in (paths[2], paths[3])),
+        )
+        conn.commit()
+    finally:
+        generator.close()
+    uploads = _source(_get(client), "uploads")
+    assert uploads["stages"]["failed_or_blocked"] == 2
+
+
 def test_readiness_not_configured_by_default(client):
     assert _source(_get(client), "apple_photos")["readiness"] == "not_configured"
 

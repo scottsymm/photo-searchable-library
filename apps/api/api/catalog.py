@@ -51,16 +51,23 @@ def _job_paths(conn: sqlite3.Connection, statuses: tuple[str, ...]) -> dict[str,
 
 
 def _failed_job_counts(conn: sqlite3.Connection) -> dict[str, int]:
+    resolved_paths = _job_paths(conn, ("queued", "working", "done"))
     rows = conn.execute(
         "SELECT params FROM jobs WHERE kind IN ('import', 'scan') AND status = 'error'"
     ).fetchall()
     counts: dict[str, int] = {}
+    counted_paths: dict[str, set[str]] = {}
     for row in rows:
         paths = json.loads(row["params"] or "{}").get("paths", [])
         for path in paths:
             kind = classify_path(path)
-            if kind is not None:
-                counts[kind] = counts.get(kind, 0) + 1
+            if kind is None or path in resolved_paths.get(kind, set()):
+                continue
+            source_paths = counted_paths.setdefault(kind, set())
+            if path in source_paths:
+                continue
+            source_paths.add(path)
+            counts[kind] = counts.get(kind, 0) + 1
     return counts
 
 
