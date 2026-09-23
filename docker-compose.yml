@@ -8,6 +8,7 @@ services:
     environment:
       PICS_DB: /data/catalog.db
       PICS_LIBRARY: /library
+      PICS_WEB_PORT: ${PICS_WEB_PORT:-3001}
       PICS_WORKER_URL: http://worker:9090
       PICS_WATCH_ROOT: /media/photos
       PICS_MOUNT_SOURCE: ${PICS_MOUNT_SOURCE:-$HOME/Pictures}
