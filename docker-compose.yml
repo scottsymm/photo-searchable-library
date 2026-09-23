@@ -8,6 +8,7 @@ services:
     environment:
       PICS_DB: /data/catalog.db
       PICS_LIBRARY: /library
+      PICS_WEB_PORT: ${PICS_WEB_PORT:-3001}
       PICS_WORKER_URL: http://worker:9090
       PICS_WATCH_ROOT: /media/photos
       PICS_MOUNT_SOURCE: ${PICS_MOUNT_SOURCE:-$HOME/Pictures}
@@ -54,7 +55,7 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
     ports:
-      - "3000:3000"
+      - "${PICS_WEB_PORT:-3001}:3000"
     environment:
       NEXT_PUBLIC_PICS_API_URL: http://localhost:8000
     depends_on:

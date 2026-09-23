@@ -26,8 +26,18 @@ docker compose up --build
 
 Open:
 
-- Web UI: <http://localhost:3000>
+- Web UI: <http://localhost:3001>
 - API health: <http://localhost:8000/>
+
+The web container listens on port 3000 internally, but this project uses host
+port 3001 so it can run alongside the Rails project using host port 3000:
+
+```bash
+docker compose up --build
+```
+
+The web UI is available at <http://localhost:3001>. To override this host port
+for another setup, set `PICS_WEB_PORT` before starting Compose.
 
 The worker is intentionally gated by a health check. The first start can take
 several minutes while it downloads the CLIP and InsightFace models. The model
