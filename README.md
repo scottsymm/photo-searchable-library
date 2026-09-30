@@ -1,5 +1,7 @@
 # Photo Searchable Library
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Self-hosted photo search for metadata, natural-language image search, places,
 and people. The repository is a TypeScript and Python monorepo:
 
@@ -266,3 +268,7 @@ pnpm turbo run test --filter=web
 pnpm turbo run build --filter=web
 docker compose config
 ```
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
