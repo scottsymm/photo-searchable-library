@@ -1,6 +1,7 @@
 FROM python:3.12-slim
 
 WORKDIR /app
+COPY LICENSE /LICENSE
 COPY packages/core /app/packages/core
 COPY apps/api /app/apps/api
 

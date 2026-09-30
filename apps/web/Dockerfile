@@ -9,6 +9,7 @@ RUN pnpm --dir apps/web build
 FROM node:24-alpine
 WORKDIR /app
 ENV NODE_ENV=production
+COPY LICENSE /LICENSE
 COPY --from=build /app/apps/web/.next/standalone ./
 # The standalone server lives under apps/web, so static assets must be relative
 # to that directory as well.

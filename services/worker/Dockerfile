@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+COPY LICENSE /LICENSE
 COPY packages/core /app/packages/core
 COPY services/worker /app/services/worker
 
