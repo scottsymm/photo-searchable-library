@@ -1,6 +1,7 @@
 FROM node:24-alpine
 
 WORKDIR /app
+COPY LICENSE /LICENSE
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/web/package.json apps/web/package.json
 
