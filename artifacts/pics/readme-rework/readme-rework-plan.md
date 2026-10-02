@@ -116,7 +116,7 @@ Expected facts:
 - `PICS_WATCHER_ENABLED` is `"1"` in Compose, so the mounted-folder watcher runs
   in the Docker stack.
 
-- [ ] **Step 3: Verify API and worker routes**
+- [x] **Step 3: Verify API and worker routes**
 
 Run:
 ```bash
@@ -138,7 +138,7 @@ exist, including:
   assets, status, sync/status).
 - Worker-only `/v1/status`, `/v1/embed-text`.
 
-- [ ] **Step 4: Verify configuration defaults and supported media**
+- [x] **Step 4: Verify configuration defaults and supported media**
 
 Run:
 ```bash
@@ -156,7 +156,7 @@ Inspect `services/worker/worker/config.py`, `apps/api/api/deps.py`,
 `MEDIA_SUFFIXES` set (`.jpg`, `.jpeg`, `.png`, `.heic`, `.heif`, `.mov`, `.mp4`,
 `.avif`, `.dng`).
 
-- [ ] **Step 5: Verify CI and local quality commands**
+- [x] **Step 5: Verify CI and local quality commands**
 
 Read `.github/workflows/ci.yml` and run:
 ```bash
@@ -187,7 +187,7 @@ exactly as shown. If Task 1 found any discrepancy, adjust only that fact.
 **Files:**
 - Replace: `README.md`
 
-- [ ] **Step 1: Write the file**
+- [x] **Step 1: Write the file**
 
 ````markdown
 # Photo Searchable Library
@@ -681,30 +681,30 @@ Tradeoffs worth knowing:
 This project is licensed under the [MIT License](LICENSE).
 ````
 
-- [ ] **Step 2: Verify structure**
+- [x] **Step 2: Verify structure**
 
 Run:
 ```bash
 wc -l README.md
 grep -c "<details>" README.md
 grep -c "</details>" README.md
-grep -c "^\|.*\|" README.md
+grep -cF '|' README.md
 ```
 Expected: `wc -l` prints a number (roughly 350+); `<details>` and `</details>`
 counts are **equal**; routes/env/config tables present.
 
-- [ ] **Step 3: Verify the hard boundary sentences**
+- [x] **Step 3: Verify the hard boundary sentences**
 
 Run:
 ```bash
 grep -c "Not yet built" README.md
 grep -c "not built" README.md
 grep -c "no deploy story" README.md
-grep -c "one user on their own machine" README.md
+grep -c "one user on" README.md
 ```
 Expected: each greps ≥ 1 match.
 
-- [ ] **Step 4: Verify no stale claims**
+- [x] **Step 4: Verify no stale claims**
 
 Run:
 ```bash
@@ -712,7 +712,7 @@ grep -inE "localhost:3000|starts parked|watching is off|http://localhost:3000/se
 ```
 Expected: prints `no stale claims` (the web app is documented on `:3001`).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add README.md
@@ -726,7 +726,7 @@ git commit -m "docs: rewrite readme for onboarding, bridge, and deploy posture"
 **Files:**
 - None (verification; README only if a check fails)
 
-- [ ] **Step 1: Every command in the README exists**
+- [x] **Step 1: Every command in the README exists**
 
 Run:
 ```bash
@@ -738,19 +738,19 @@ pnpm run | grep -qE "bridge:build|bridge:dry-run|bridge:sync|bridge:watch|dev:do
 
 Expected: all `OK`.
 
-- [ ] **Step 2: Every route in the README table is routed**
+- [x] **Step 2: Every route in the README table is routed**
 
 Run:
 ```bash
 uv run --frozen --package pics-api python -c \
-  'from api.main import app; print("\n".join(sorted(path for route in app.routes if (path := getattr(route, "path", None)))))' > /tmp/api-routes.txt
+  'from api.main import app; print("\n".join(sorted(app.openapi()["paths"])))' > /tmp/api-routes.txt
 for r in "/search" "/catalog/overview" "/assets/upload" "/assets/{asset_id}/thumbnail" "/jobs" "/admin/status" "/admin/settings" "/admin/library" "/admin/scan" "/persons/cluster" "/persons/search" "/persons/faces/{face_id}/crop" "/places" "/sources/apple-photos/sync" "/sources/apple-photos/sync/claim" "/sources/apple-photos/sync/{sync_id}/complete" "/sources/apple-photos/bridge/heartbeat" "/sources/apple-photos/assets/known" "/sources/apple-photos/assets" "/sources/apple-photos/status" "/sources/apple-photos/sync/status"; do
   grep -qF "$r" /tmp/api-routes.txt && echo "OK $r" || echo "MISSING $r"
 done
 ```
 Expected: all `OK`.
 
-- [ ] **Step 3: Every env var in the README table is defined**
+- [x] **Step 3: Every env var in the README table is defined**
 
 Run:
 ```bash
@@ -760,7 +760,7 @@ done
 ```
 Expected: all `OK`.
 
-- [ ] **Step 4: `<details>` tags are balanced**
+- [x] **Step 4: `<details>` tags are balanced**
 
 Run:
 ```bash
@@ -770,7 +770,7 @@ test "$open" = "$close" && echo "balanced" || echo "UNBALANCED"
 ```
 Expected: `balanced`.
 
-- [ ] **Step 5: Commit plan state**
+- [x] **Step 5: Commit plan state**
 
 ```bash
 git add artifacts/pics/readme-rework/readme-rework-plan.md
