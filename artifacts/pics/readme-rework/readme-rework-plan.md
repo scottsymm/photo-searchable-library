@@ -77,7 +77,7 @@ the repository, adjust the embedded README in Task 2 accordingly.
 **Files:**
 - None (verification)
 
-- [ ] **Step 1: Verify workspace commands and package graph**
+- [x] **Step 1: Verify workspace commands and package graph**
 
 Run:
 ```bash
@@ -94,7 +94,7 @@ Expected:
 - `pnpm dev` runs only the web package through Turbo; it is not the full
   API/worker stack.
 
-- [ ] **Step 2: Verify Docker services, ports, volumes, and startup behavior**
+- [x] **Step 2: Verify Docker services, ports, volumes, and startup behavior**
 
 Run:
 ```bash
@@ -121,9 +121,9 @@ Expected facts:
 Run:
 ```bash
 uv run --frozen --package pics-api python -c \
-  'from api.main import app; print("\n".join(sorted(route.path for route in app.routes)))'
+  'from api.main import app; print("\n".join(sorted(path for route in app.routes if (path := getattr(route, "path", None)))))'
 uv run --frozen --package pics-worker python -c \
-  'from worker.embed_api import app; print("\n".join(sorted(route.path for route in app.routes)))'
+  'from worker.embed_api import app; print("\n".join(sorted(path for route in app.routes if (path := getattr(route, "path", None)))))'
 ```
 
 Cross-check the output against `apps/api/api/*.py` and record only routes that
@@ -743,7 +743,7 @@ Expected: all `OK`.
 Run:
 ```bash
 uv run --frozen --package pics-api python -c \
-  'from api.main import app; print("\n".join(sorted(route.path for route in app.routes)))' > /tmp/api-routes.txt
+  'from api.main import app; print("\n".join(sorted(path for route in app.routes if (path := getattr(route, "path", None)))))' > /tmp/api-routes.txt
 for r in "/search" "/catalog/overview" "/assets/upload" "/assets/{asset_id}/thumbnail" "/jobs" "/admin/status" "/admin/settings" "/admin/library" "/admin/scan" "/persons/cluster" "/persons/search" "/persons/faces/{face_id}/crop" "/places" "/sources/apple-photos/sync" "/sources/apple-photos/sync/claim" "/sources/apple-photos/sync/{sync_id}/complete" "/sources/apple-photos/bridge/heartbeat" "/sources/apple-photos/assets/known" "/sources/apple-photos/assets" "/sources/apple-photos/status" "/sources/apple-photos/sync/status"; do
   grep -qF "$r" /tmp/api-routes.txt && echo "OK $r" || echo "MISSING $r"
 done
