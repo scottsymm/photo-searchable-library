@@ -173,6 +173,26 @@ PICS_MOUNT_SOURCE=/Volumes/Backup/Photos docker compose up --build
 The host directory is mounted **read-only** and can only be changed at container
 startup, not from the UI.
 
+### Import photos already in `~/Pictures`
+
+The catalog starts **parked**. The worker does not backfill existing files until
+you choose that behavior:
+
+1. Open <http://localhost:3001/settings>.
+2. Under **Watch & ingest**, select **Existing and new photos**.
+3. Click **Enable watch**.
+
+This imports the current mounted library and then watches for new photos. To
+import the current library without enabling continuous watch, click **Scan
+library now** instead. The equivalent API action is:
+
+```bash
+curl -X POST http://localhost:8000/admin/scan
+```
+
+Choosing **New photos only** establishes a baseline and leaves existing files
+untouched.
+
 <details>
 <summary><strong>Why the web app is on :3001</strong></summary>
 
@@ -189,7 +209,7 @@ the configured web origin.
 
 | Path | Who it's for | How |
 |---|---|---|
-| **Mounted-folder scan/watch** | Any OS | A host directory is mounted read-only at `/media/photos`; the worker watches it |
+| **Mounted-folder scan/watch** | Any OS | Mount a directory read-only, then enable watch/backfill in Settings or run a scan |
 | **Direct upload** | Any OS | Upload a file, or a whole directory, into the library |
 | **Apple Photos bridge** | macOS users | Sync from your existing Photos library; see below |
 
@@ -307,7 +327,7 @@ Environment variables read by the API, worker, CLI, and Compose:
 | `PICS_MODEL_VERSION` | `clip-vit-base-patch32-v1` | Version recorded with embeddings |
 | `PICS_FACE_MODEL` | `buffalo_l` | InsightFace model |
 | `PICS_WATCH_ROOT` | `/media/photos` | Directory watched by the worker |
-| `PICS_WATCHER_ENABLED` | `1` | Enable the mounted-folder watcher |
+| `PICS_WATCHER_ENABLED` | `1` | Start the mounted-folder watcher process; the catalog watch setting still controls ingest |
 | `PICS_WATCH_POLL_SECONDS` | `30` | Watcher poll interval |
 | `PICS_INVENTORY_CACHE_TTL` | `60` | Watch-root inventory cache TTL (seconds) |
 | `PICS_API` | `http://localhost:8000` | API URL used by the CLI |
