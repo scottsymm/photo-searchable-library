@@ -228,14 +228,29 @@ curl -F 'file=@/path/to/photo.heic' http://localhost:8000/assets/upload
 uv run --package pics-cli pics upload "$HOME/Pictures"
 ```
 
-### Queue a local scan (no HTTP API needed)
+### Queue a host-native scan
 
-`pics scan` walks a directory and queues paths directly in the configured local
-SQLite catalog:
+`pics scan` is for a host-native worker using the same local catalog and
+filesystem paths. It writes directly to `PICS_DB` and does not submit the job to
+the running Docker API:
 
 ```bash
 PICS_DB=/path/to/catalog.db uv run --package pics-cli pics scan "$HOME/Pictures"
 ```
+
+Do **not** use this command to scan the Docker stack. Docker uses the shared
+`catalog` volume and sees the mounted directory as `/media/photos`, while a
+host-side `PICS_DB` and `$HOME/Pictures` path are different from the worker's
+catalog and filesystem. For Docker, use **Scan library now** in Settings or the
+API action instead:
+
+```bash
+curl -X POST http://localhost:8000/admin/scan
+```
+
+The API queues the job in the shared catalog with container-visible paths, so
+the Compose worker can claim and process it. The direct upload command above is
+also Docker-safe because it submits files through the running API.
 
 ### Watch jobs
 
