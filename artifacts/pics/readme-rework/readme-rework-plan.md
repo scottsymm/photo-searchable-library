@@ -781,18 +781,18 @@ git commit -m "chore: record readme rework plan"
 
 ## Verification Summary
 
-- [ ] `README.md` rewritten; all old sections relocated, none dropped.
-- [ ] `docker compose up --build` is the documented default; raw compose and
+- [x] `README.md` rewritten; all old sections relocated, none dropped.
+- [x] `docker compose up --build` is the documented default; raw compose and
       `pnpm dev:docker` live in the doc with clear scope.
-- [ ] Apple Photos bridge is a first-class section with run + sync + protocol detail.
-- [ ] All run paths documented: Docker quickstart, `pnpm dev`, `pnpm dev:docker`,
+- [x] Apple Photos bridge is a first-class section with run + sync + protocol detail.
+- [x] All run paths documented: Docker quickstart, `pnpm dev`, `pnpm dev:docker`,
       and the containerized stack.
-- [ ] Four technical deep dives present as `<details>` blocks (worker process,
+- [x] Four technical deep dives present as `<details>` blocks (worker process,
       sqlite-vec, data ownership, bridge protocol).
-- [ ] Hard boundary sentence present: authentication/multi-user and production
+- [x] Hard boundary sentence present: authentication/multi-user and production
       deployment are **not built**.
-- [ ] Routes/env vars/scripts cross-checked against the repo (Task 3).
-- [ ] `<details>`/`</details>` balanced; no stale `:3000` or "watching is off"
+- [x] Routes/env vars/scripts cross-checked against the repo (Task 3).
+- [x] `<details>`/`</details>` balanced; no stale `:3000` or "watching is off"
       claims.
-- [ ] `uv lock --check`, Python suites, web test/build, and `docker compose config`
+- [x] `uv lock --check`, Python suites, web test/build, and `docker compose config`
       all pass.
