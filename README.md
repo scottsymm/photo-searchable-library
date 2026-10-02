@@ -422,6 +422,7 @@ pnpm dev:docker
 Compose Watch syncs `apps/web`, `apps/api`, and `packages/core` into their
 containers with hot reload, and rebuilds when dependency files or development
 Dockerfiles change. The worker keeps the regular image because its model
+environment is expensive to rebuild.
 
 ### Run a task for one package
 
@@ -448,6 +449,7 @@ PICS_DB=/path/to/catalog.db PICS_API=http://localhost:8000 \
 
 Back up the catalog and library volumes together; they are the source of truth.
 `docker compose down` preserves all three; `docker compose down -v` deletes
+the catalog, imported library, and downloaded model weights.
 
 ---
 
