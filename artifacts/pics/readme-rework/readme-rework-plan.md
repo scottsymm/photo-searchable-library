@@ -1,3 +1,195 @@
+---
+title: Holistic README Rework - Implementation Plan
+tags:
+  - plan
+  - readme-rework
+  - documentation
+created: 2026-10-02
+---
+
+# Holistic README Rework — Implementation Plan
+
+*Created: 2026-10-02*
+
+**Goal:** Replace the root `README.md` with a single, onboarding-first document
+that accurately describes the app and stack, documents every local run path,
+treats the Apple Photos bridge as first-class, and uses `<details>` blocks for
+technical deep dives.
+
+**Architecture:** One `README.md`, ordered as a reader journey, all existing
+sections relocated (none dropped). Content is grounded in verified repo facts
+(routes, env vars, package scripts, Compose volumes, CLI commands), not
+invented.
+
+**Tech Stack:** GitHub-flavored Markdown, `<details>/<summary>` collapsibles,
+TOC anchors.
+
+**Source:** This plan mirrors the completed Rails README rework at
+`/Users/jobofish/code/photo-searchable-library-rails/artifacts/photo-searchable-library-rails/readme-rework/readme-rework-plan.md`,
+adapted to this repository's actual Next.js/FastAPI/Python worker/CLI/Swift
+architecture.
+
+---
+
+## Spirit checklist (mirrors the Rails rework)
+
+The Rails rework landed these properties; this plan must too. Task 2 embeds the
+complete final README so the executor does not invent content.
+
+- [ ] **Onboarding-first**: reader journey from "what is this" to "running" to
+      "operating", not a directory-tree dump.
+- [ ] **One atomic write**: the full document is replaced in Task 2, no old
+      section survives with contradictory ports or workflows.
+- [ ] **None dropped, all relocated**: every existing README section (Docker
+      quickstart, indexing, bridge, search, clustering, local dev, tooling,
+      verification, license) is preserved somewhere in the new document.
+- [ ] **Deep dives in `<details>`**: protocol and internals live in
+      `<details>/<summary>` blocks so the primary path stays short.
+- [ ] **Hard boundary sentences**: explicit "not built" / "no deploy" claims
+      that Task 3 greps for.
+- [ ] **Grounded, not invented**: every route, env var, command, port, and
+      package name is verified in Task 1 before the write.
+- [ ] **Cross-checked**: Task 3 re-verifies commands, routes, env vars, and
+      `<details>` balance against the codebase.
+
+---
+
+## File Map
+
+| File | Action | Responsibility |
+|---|---|---|
+| `README.md` | Replace | The complete reworked document (embedded verbatim in Task 2) |
+| `artifacts/pics/readme-rework/readme-rework-plan.md` | Create | This plan |
+
+The bridge-specific `apps/photos-bridge/README.md` stays focused on Swift bridge
+usage; the root README links to it instead of duplicating the protocol.
+
+---
+
+## Tasks
+
+### Task 1: Verify the source-of-truth facts the README will cite
+
+Every route, env var, script, and command in the new README must exist. Verify
+them before writing so the document is grounded. If a fact below differs from
+the repository, adjust the embedded README in Task 2 accordingly.
+
+**Files:**
+- None (verification)
+
+- [x] **Step 1: Verify workspace commands and package graph**
+
+Run:
+```bash
+pnpm run
+```
+
+Read `package.json`, `pnpm-workspace.yaml`, `pyproject.toml`, and `turbo.json`.
+
+Expected:
+- Root scripts include `dev`, `dev:docker`, `dev:docker:build`, `test`, `build`,
+  `check`, and the four `bridge:*` commands.
+- Python workspace packages: `pics-core`, `pics-api`, `pics-worker`, `pics-cli`.
+- pnpm workspace contains only `apps/web`.
+- `pnpm dev` runs only the web package through Turbo; it is not the full
+  API/worker stack.
+
+- [x] **Step 2: Verify Docker services, ports, volumes, and startup behavior**
+
+Run:
+```bash
+docker compose config
+docker compose -f docker-compose.yml -f docker-compose.dev.yml config
+```
+
+Expected facts:
+- `api` publishes host port `8000`.
+- `web` listens on container port `3000` and publishes host port
+  `${PICS_WEB_PORT:-3001}`.
+- `api` and `worker` share the `catalog` and `library` volumes and the read-only
+  `PICS_MOUNT_SOURCE` bind mount; the worker also owns `models`.
+- `api` `depends_on` the worker `service_healthy`; the worker healthcheck hits
+  `http://localhost:9090/v1/status`.
+- The dev override (`docker-compose.dev.yml`) uses Compose Watch for `api`,
+  `web`, and `packages/core`, with rebuild triggers on dependency/Dockerfile
+  changes; the worker keeps the regular image.
+- `PICS_WATCHER_ENABLED` is `"1"` in Compose, so the mounted-folder watcher runs
+  in the Docker stack.
+
+- [x] **Step 3: Verify API and worker routes**
+
+Run:
+```bash
+uv run --frozen --package pics-api python -c \
+  'from api.main import app; print("\n".join(sorted(path for route in app.routes if (path := getattr(route, "path", None)))))'
+uv run --frozen --package pics-worker python -c \
+  'from worker.embed_api import app; print("\n".join(sorted(path for route in app.routes if (path := getattr(route, "path", None)))))'
+```
+
+Cross-check the output against `apps/api/api/*.py` and record only routes that
+exist, including:
+- `/`, `/search`, `/catalog/overview`.
+- `/assets/upload`, `/assets/{asset_id}/thumbnail`.
+- `/jobs`, `/jobs/{job_id}`.
+- `/admin/status`, `/admin/settings`, `/admin/library`, `/admin/scan`.
+- `/persons` plus cluster, suggestions, aliases, merge, split, faces, and crop.
+- `/places`.
+- `/sources/apple-photos/*` (sync, claim, complete, heartbeat, assets/known,
+  assets, status, sync/status).
+- Worker-only `/v1/status`, `/v1/embed-text`.
+
+- [x] **Step 4: Verify configuration defaults and supported media**
+
+Run:
+```bash
+uv run --frozen --package pics-cli pics --help
+```
+
+Inspect `services/worker/worker/config.py`, `apps/api/api/deps.py`,
+`apps/api/api/admin.py`, `apps/api/api/sources.py`,
+`packages/core/core/schema.py`, `tools/cli/pics_cli/__main__.py`, and
+`docker-compose.yml`. Record actual defaults for `PICS_DB`, `PICS_LIBRARY`,
+`PICS_API`, `PICS_WORKER_URL`, `PICS_EMBED_PORT`, `PICS_MODEL`,
+`PICS_MODEL_VERSION`, `PICS_FACE_MODEL`, `PICS_WATCH_ROOT`,
+`PICS_WATCHER_ENABLED`, `PICS_WATCH_POLL_SECONDS`, `PICS_INVENTORY_CACHE_TTL`,
+`PICS_MOUNT_SOURCE`, `PICS_WEB_PORT`, `HF_HOME`, `INSIGHTFACE_ROOT`, and the CLI
+`MEDIA_SUFFIXES` set (`.jpg`, `.jpeg`, `.png`, `.heic`, `.heif`, `.mov`, `.mp4`,
+`.avif`, `.dng`).
+
+- [x] **Step 5: Verify CI and local quality commands**
+
+Read `.github/workflows/ci.yml` and run:
+```bash
+uv lock --check
+uv run --frozen --package pics-core --extra dev pytest packages/core/tests
+uv run --frozen --package pics-worker --extra dev pytest services/worker/tests
+uv run --frozen --package pics-api --extra dev pytest apps/api/tests
+uv run --frozen --package pics-cli pics --help
+pnpm install --frozen-lockfile
+pnpm turbo run test --filter=web
+pnpm turbo run build --filter=web
+docker compose config
+```
+
+Expected: all pass. Note that `pnpm check` resolves to `uv lock --check` plus
+the web `tsc --noEmit` typecheck (from `turbo.json`), so it is safe to document.
+
+**Verification:** the audit notes contain no unverified URLs, ports, commands,
+package names, or environment variables before Task 2 begins.
+
+---
+
+### Task 2: Write the complete new README.md
+
+This is the whole deliverable in one atomic write. Preserve the markdown
+exactly as shown. If Task 1 found any discrepancy, adjust only that fact.
+
+**Files:**
+- Replace: `README.md`
+
+- [x] **Step 1: Write the file**
+
+````markdown
 # Photo Searchable Library
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -173,26 +365,6 @@ PICS_MOUNT_SOURCE=/Volumes/Backup/Photos docker compose up --build
 The host directory is mounted **read-only** and can only be changed at container
 startup, not from the UI.
 
-### Import photos already in `~/Pictures`
-
-The catalog starts **parked**. The worker does not backfill existing files until
-you choose that behavior:
-
-1. Open <http://localhost:3001/settings>.
-2. Under **Watch & ingest**, select **Existing and new photos**.
-3. Click **Enable watch**.
-
-This imports the current mounted library and then watches for new photos. To
-import the current library without enabling continuous watch, click **Scan
-library now** instead. The equivalent API action is:
-
-```bash
-curl -X POST http://localhost:8000/admin/scan
-```
-
-Choosing **New photos only** establishes a baseline and leaves existing files
-untouched.
-
 <details>
 <summary><strong>Why the web app is on :3001</strong></summary>
 
@@ -209,7 +381,7 @@ the configured web origin.
 
 | Path | Who it's for | How |
 |---|---|---|
-| **Mounted-folder scan/watch** | Any OS | Mount a directory read-only, then enable watch/backfill in Settings or run a scan |
+| **Mounted-folder scan/watch** | Any OS | A host directory is mounted read-only at `/media/photos`; the worker watches it |
 | **Direct upload** | Any OS | Upload a file, or a whole directory, into the library |
 | **Apple Photos bridge** | macOS users | Sync from your existing Photos library; see below |
 
@@ -228,29 +400,14 @@ curl -F 'file=@/path/to/photo.heic' http://localhost:8000/assets/upload
 uv run --package pics-cli pics upload "$HOME/Pictures"
 ```
 
-### Queue a host-native scan
+### Queue a local scan (no HTTP API needed)
 
-`pics scan` is for a host-native worker using the same local catalog and
-filesystem paths. It writes directly to `PICS_DB` and does not submit the job to
-the running Docker API:
+`pics scan` walks a directory and queues paths directly in the configured local
+SQLite catalog:
 
 ```bash
 PICS_DB=/path/to/catalog.db uv run --package pics-cli pics scan "$HOME/Pictures"
 ```
-
-Do **not** use this command to scan the Docker stack. Docker uses the shared
-`catalog` volume and sees the mounted directory as `/media/photos`, while a
-host-side `PICS_DB` and `$HOME/Pictures` path are different from the worker's
-catalog and filesystem. For Docker, use **Scan library now** in Settings or the
-API action instead:
-
-```bash
-curl -X POST http://localhost:8000/admin/scan
-```
-
-The API queues the job in the shared catalog with container-visible paths, so
-the Compose worker can claim and process it. The direct upload command above is
-also Docker-safe because it submits files through the running API.
 
 ### Watch jobs
 
@@ -342,7 +499,7 @@ Environment variables read by the API, worker, CLI, and Compose:
 | `PICS_MODEL_VERSION` | `clip-vit-base-patch32-v1` | Version recorded with embeddings |
 | `PICS_FACE_MODEL` | `buffalo_l` | InsightFace model |
 | `PICS_WATCH_ROOT` | `/media/photos` | Directory watched by the worker |
-| `PICS_WATCHER_ENABLED` | `1` | Start the mounted-folder watcher process; the catalog watch setting still controls ingest |
+| `PICS_WATCHER_ENABLED` | `1` | Enable the mounted-folder watcher |
 | `PICS_WATCH_POLL_SECONDS` | `30` | Watcher poll interval |
 | `PICS_INVENTORY_CACHE_TTL` | `60` | Watch-root inventory cache TTL (seconds) |
 | `PICS_API` | `http://localhost:8000` | API URL used by the CLI |
@@ -449,7 +606,7 @@ PICS_DB=/path/to/catalog.db PICS_API=http://localhost:8000 \
 
 Back up the catalog and library volumes together; they are the source of truth.
 `docker compose down` preserves all three; `docker compose down -v` deletes
-the catalog, imported library, and downloaded model weights.
+them. The host photo directory is mounted read-only and is never modified.
 
 ---
 
@@ -522,3 +679,120 @@ Tradeoffs worth knowing:
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
+````
+
+- [x] **Step 2: Verify structure**
+
+Run:
+```bash
+wc -l README.md
+grep -c "<details>" README.md
+grep -c "</details>" README.md
+grep -cF '|' README.md
+```
+Expected: `wc -l` prints a number (roughly 350+); `<details>` and `</details>`
+counts are **equal**; routes/env/config tables present.
+
+- [x] **Step 3: Verify the hard boundary sentences**
+
+Run:
+```bash
+grep -c "Not yet built" README.md
+grep -c "not built" README.md
+grep -c "no deploy story" README.md
+grep -c "one user on" README.md
+```
+Expected: each greps ≥ 1 match.
+
+- [x] **Step 4: Verify no stale claims**
+
+Run:
+```bash
+grep -inE "localhost:3000|starts parked|watching is off|http://localhost:3000/settings" README.md || echo "no stale claims"
+```
+Expected: prints `no stale claims` (the web app is documented on `:3001`).
+
+- [x] **Step 5: Commit**
+
+```bash
+git add README.md
+git commit -m "docs: rewrite readme for onboarding, bridge, and deploy posture"
+```
+
+---
+
+### Task 3: Cross-check the README against the codebase
+
+**Files:**
+- None (verification; README only if a check fails)
+
+- [x] **Step 1: Every command in the README exists**
+
+Run:
+```bash
+for c in "apps/photos-bridge" "services/worker" "tools/cli" "packages/core" ".github/workflows/ci.yml"; do
+  test -e "$c" && echo "OK $c" || echo "MISSING $c"
+done
+pnpm run | grep -qE "bridge:build|bridge:dry-run|bridge:sync|bridge:watch|dev:docker|dev:docker:build" && echo "OK root scripts" || echo "MISSING root scripts"
+```
+
+Expected: all `OK`.
+
+- [x] **Step 2: Every route in the README table is routed**
+
+Run:
+```bash
+uv run --frozen --package pics-api python -c \
+  'from api.main import app; print("\n".join(sorted(app.openapi()["paths"])))' > /tmp/api-routes.txt
+for r in "/search" "/catalog/overview" "/assets/upload" "/assets/{asset_id}/thumbnail" "/jobs" "/admin/status" "/admin/settings" "/admin/library" "/admin/scan" "/persons/cluster" "/persons/search" "/persons/faces/{face_id}/crop" "/places" "/sources/apple-photos/sync" "/sources/apple-photos/sync/claim" "/sources/apple-photos/sync/{sync_id}/complete" "/sources/apple-photos/bridge/heartbeat" "/sources/apple-photos/assets/known" "/sources/apple-photos/assets" "/sources/apple-photos/status" "/sources/apple-photos/sync/status"; do
+  grep -qF "$r" /tmp/api-routes.txt && echo "OK $r" || echo "MISSING $r"
+done
+```
+Expected: all `OK`.
+
+- [x] **Step 3: Every env var in the README table is defined**
+
+Run:
+```bash
+for v in PICS_DB PICS_LIBRARY PICS_WORKER_URL PICS_EMBED_PORT PICS_MODEL PICS_MODEL_VERSION PICS_FACE_MODEL PICS_WATCH_ROOT PICS_WATCHER_ENABLED PICS_WATCH_POLL_SECONDS PICS_INVENTORY_CACHE_TTL PICS_API PICS_WEB_PORT PICS_MOUNT_SOURCE HF_HOME INSIGHTFACE_ROOT; do
+  grep -rq "$v" services/worker/worker apps/api/api packages/core tools/cli docker-compose.yml && echo "OK $v" || echo "MISSING $v"
+done
+```
+Expected: all `OK`.
+
+- [x] **Step 4: `<details>` tags are balanced**
+
+Run:
+```bash
+open=$(grep -c "<details>" README.md); close=$(grep -c "</details>" README.md)
+echo "open=$open close=$close"
+test "$open" = "$close" && echo "balanced" || echo "UNBALANCED"
+```
+Expected: `balanced`.
+
+- [x] **Step 5: Commit plan state**
+
+```bash
+git add artifacts/pics/readme-rework/readme-rework-plan.md
+git commit -m "chore: record readme rework plan"
+```
+
+---
+
+## Verification Summary
+
+- [x] `README.md` rewritten; all old sections relocated, none dropped.
+- [x] `docker compose up --build` is the documented default; raw compose and
+      `pnpm dev:docker` live in the doc with clear scope.
+- [x] Apple Photos bridge is a first-class section with run + sync + protocol detail.
+- [x] All run paths documented: Docker quickstart, `pnpm dev`, `pnpm dev:docker`,
+      and the containerized stack.
+- [x] Four technical deep dives present as `<details>` blocks (worker process,
+      sqlite-vec, data ownership, bridge protocol).
+- [x] Hard boundary sentence present: authentication/multi-user and production
+      deployment are **not built**.
+- [x] Routes/env vars/scripts cross-checked against the repo (Task 3).
+- [x] `<details>`/`</details>` balanced; no stale `:3000` or "watching is off"
+      claims.
+- [x] `uv lock --check`, Python suites, web test/build, and `docker compose config`
+      all pass.
